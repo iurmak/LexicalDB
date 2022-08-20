@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Добавить профиль{% endblock %}
+{% block content %}
+    <div class="container">
+        <form action="" method="post">
+            <div class="card">
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-12 col-md-3"><label for="username">Отображаемое имя</label></dt>
+                        <dd class="col-12 col-md-9">
+                            <input required type="text" class="form-control" name="username" id="username" placeholder="СуперЛексиколог" minlength="3" maxlength="40" pattern="[А-ЯЁа-яё\w_]+">
+                        </dd>
+                        <dt class="col-12 col-md-3"><label for="firstname">Настоящее имя</label></dt>
+                        <dd class="col-12 col-md-9">
+                            <input required type="text" class="form-control" name="firstname" id="firstname" placeholder="Иоанна" minlength="3" maxlength="40" pattern="[А-Яа-яЁё]+">
+                        </dd>
+                        <dt class="col-12 col-md-3"><label for="surname">Настоящая фамилия</label></dt>
+                        <dd class="col-12 col-md-9">
+                            <input required type="text" class="form-control" name="surname" id="surname" placeholder="Карпова" minlength="3" maxlength="40" pattern="[А-Яа-яЁё]+">
+                        </dd>
+                        <dt class="col-12 col-md-3"><label for="email">Имейл</label></dt>
+                        <dd class="col-12 col-md-9">
+                            <input required type="email" class="form-control" name="email" id="email" placeholder="hello@hse.ru" maxlength="100">
+                        </dd>
+                        <dt class="col-12 col-md-3"><label for="password">Пароль</label></dt>
+                        <dd class="col-12 col-md-9">
+                            <input required type="text" class="form-control" name="password" id="password" maxlength="100">
+                        </dd>
+                    </dl>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="submit" class="btn btn-primary">Добавить профиль</button>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}

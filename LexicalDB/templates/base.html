@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8" name="yandex-verification" content="a2acf7b7ab2cb543">
+        <link rel="stylesheet" href="/static/css/bootstrap.css">
+        <link rel="icon" href="{{ url_for('static', filename='Pamir_logo.svg') }}" type="image/svg">
+        <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='Pamir_logo_152.png') }}" type="image/png">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='Pamir_logo_180.png') }}" type="image/png">
+        <link rel="apple-touch-icon" sizes="167x167" href="{{ url_for('static', filename='Pamir_logo_167.png') }}" type="image/png">
+        <title>
+            {% block title %}{% endblock %}
+        </title>
+        <script src="/static/js/bootstrap.bundle.min.js"></script>
+    </head>
+    <body style="font-family: 'Charis SIL'" class="d-flex flex-column min-vh-100">
+        <header>
+            <script src="/static/js/jquery-3.2.1.slim.js"></script>
+            <script src="/static/js//autosize-master/dist/autosize.min.js"></script>
+            <nav class="navbar navbar-light navbar-expand-lg text-center flex-column flex-md-row bd-navbar bg-light">
+                <div class="container-fluid">
+                    <a class="navbar-brand text-center" href="/" tabindex="-1">
+                        <img src="{{ url_for('static', filename='Shughni logo coloured.png') }}" height="60" class="d-inline-block align-top" alt="">
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item active">
+                                <a class="nav-link" style="color: black" href="">Тест</a>
+                            </li>
+                        </ul>
+                        {% if session.get('user') and status(session.get('user')) > 1 %}
+                            <div class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Администрирование
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('profiles') }}">
+                                            Профили
+                                        </a>
+                                    </li>
+                                    {% if session.get('user') and status(session.get('user')) > 2 %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('add_user') }}">
+                                                Добавить профиль
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="">
+                                                Настройки
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('templates') }}">
+                                            Шаблоны
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('new_template') }}">
+                                            Добавить шаблон
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% endif %}
+                        {% if session.get('user') %}
+                            <span class="navbar-text">
+                                <a class="nav-link active" href={{ url_for('profile') }}>
+                                    {% if status(session.get('user')) == 1 %}
+                                        <span class="text-dark">{{ username(session.get('user')) }}</span>
+                                    {% elif status(session.get('user')) == 2 %}
+                                        <span class="text-success">{{ username(session.get('user')) }}</span>
+                                    {% elif status(session.get('user')) == 3 %}
+                                        <span class="text-danger">{{ username(session.get('user')) }}</span>
+                                    {% endif %}
+                                </a>
+                            </span>
+                            <span>
+                                <a class="nav-link text-secondary" href={{ url_for('login') }}>Выйти</a>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </nav>
+        </header><br>
+        <main role="main" class="mb-auto">
+            {% with messages = get_flashed_messages(with_categories=True) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="container">
+                            <div class="{{ category }} rounded text-center alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+        <footer class="footer bg-light">
+            <div class="container-fluid">
+                <div class="row justify-content-between align-items-center">
+                    <div class="col-12 col-md-10" style="font-size: small">
+                        <div class="row align-items-center">
+                            <div class="col-12 text-start">
+                                2022
+                            </div>
+                            <div class="d-md-none">
+                                <hr class="m-2">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <div class="row align-items-center justify-content-center">
+                            {% if not session.get('user') %}
+                                <div class="col-12 text-center">
+                                    <a class="link-secondary" href="{{ url_for('login') }}" style="font-size: small">Войти</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <script src="/static/js/popper.min.js"></script>
+        <script>
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+        </script>
+    </body>
+</html>

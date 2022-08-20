@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Профили{% endblock %}
+{% block content %}
+    <div class="container">
+        <form action="" method="post" id="search">
+            <div class="row justify-content-center">
+                <div class="col-auto mb-2 mb-md-0">
+                    <button class="btn btn-outline-primary" type="submit" form="search">Искать</button>
+                </div>
+                <div class="col-auto mb-2 mb-md-0">
+                    <select class="form-select" name="parameter">
+                        <option selected value="username">Параметр поиска</option>
+                        <option value="ID">ID</option>
+                        <option value="username">Отображаемое имя</option>
+                        <option value="firstname">Имя</option>
+                        <option value="surname">Фамилия</option>
+                        <option value="email">Имейл</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <input required name="query" class="form-control" type="text">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="container">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Роль</th>
+                    <th scope="col">Отображаемое имя</th>
+                    <th scope="col">Фамилия</th>
+                    <th scope="col">Имя</th>
+                    <th scope="col">Имейл</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for profile in profiles %}
+                            <tr>
+                                <td>{{ profile.user_id }}</td>
+                                <td>{{ profile.role.role }}</td>
+                                <td>
+                                    <a href="{{ url_for('profile', user_id=profile.user_id)}}">
+                                        {{ Amend.username(profile.user_id) }}
+                                    </a>
+                                </td>
+                                <td>{{ profile.surname }}</td>
+                                <td>{{ profile.firstname }}</td>
+                                <td>{{ profile.email }}</td>
+                            </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if items.has_prev or items.has_next %}
+            <div class="container text-center">
+                <div class="row justify-content-center">
+                    {% if items.has_prev %}
+                        <div class="col-4">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('profiles', page=items.prev_num) }}">Предыдущие профили</a>
+                        </div>
+                    {% endif %}
+                    {% if items.has_next %}
+                        <div class="col-4">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('profiles', page=items.next_num) }}">Следующие профили</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

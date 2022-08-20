@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Вход для редакторов{% endblock %}
+{% block content %}
+    <div class="container d-flex flex-column justify-content-center align-items-center">
+        <div class="alert alert-secondary" role="alert">
+            <p>О проблемах со входом сообщайте Юрию Макарову (iurmak@bk.ru).</p>
+            <span>Частая проблема — неправильный пароль. Попробуйте его восстановить.</span>
+        </div>
+        <form action="" method="post" id="login_form">
+            <div class="mb-3">
+                <label for="login">Имейл или отображаемое имя</label>
+                <input required type="text" class="form-control" name="login" id="login" placeholder="hello@hse.ru" maxlength="100">
+            </div>
+            <div class="mb-3">
+                <label for="password">Пароль</label>
+                <input type="password" required class="form-control" name="password" id="password" maxlength="100">
+            </div>
+            <div class="btn-toolbar mb-5" role="toolbar" aria-label="Reset or login">
+                <div class="btn-group me-2" role="group" aria-label="Reset">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#password_recover">Восстановить пароль</button>
+                </div>
+                <div class="btn-group" role="group" aria-label="Login">
+                    <button type="submit" class="btn btn-primary" form="login_form">Войти</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal fade" id="password_recover" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Восстановление пароля</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="" method="post" id="new_credentials">
+                        <div class="mb-3">
+                            <input required
+                                   type="email"
+                                   maxlength="100"
+                                   name="email"
+                                   id="email"
+                                   class="form-control"
+                                   placeholder="Имейл"
+                            >
+                        </div>
+                        <div>
+                            <input required
+                                   type="password"
+                                   name="new_password"
+                                   id="new_password"
+                                   maxlength="100"
+                                   class="form-control"
+                                   placeholder="Новый пароль"
+                            >
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-sm btn-primary" form="new_credentials">Отправить запрос</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

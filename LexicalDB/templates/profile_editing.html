@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Редактирование профиля {{ user.username }}{% endblock %}
+{% block content %}
+    <div class="container mb-2">
+        <form method="post" id="edited_profile" class="col d-flex justify-content-center">
+            <div class="card" style="max-width: 700px">
+                <div class="card-header">
+                    <div class="row justify-content-center align-items-center">
+                        <div class="col-auto row justify-content-between align-items-center">
+                            <div class="col-auto mb-2 mb-md-0">
+                                <select class="form-select" name="role_id">
+                                    {% for r in Roles.query.all() %}
+                                        <option
+                                                {% if r.role_id == user.role_id %}selected{% endif %}
+                                                value="{{ r.role_id }}">
+                                            {{ r.role }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-auto mb-2 mb-md-0">
+                                <input class="form-control"
+                                       type="text"
+                                       value="{{ user.username }}"
+                                       placeholder="Отображаемое имя"
+                                       name="username"
+                                       id="username"
+                                       required
+                                >
+                            </div>
+                            <div class="col-auto mb-2 mb-md-0">
+                                <button class="btn btn-sm btn-outline-danger"
+                                        type="button"
+                                        form="new_credentials"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#password_change"
+                                >
+                                    Новый пароль
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-12 col-sm-3">
+                            <label class="form-label" for="firstname">Имя</label> и
+                            <label class="form-label" for="surname">фамилия</label>
+                        </dt>
+                        <dd class="col-12 col-sm-9">
+                            <div class="row justify-content-between">
+                                <div class="col-auto">
+                                    <input class="form-control"
+                                           type="text"
+                                           value="{{ user.firstname }}"
+                                           placeholder="Имя"
+                                           name="firstname"
+                                           id="firstname"
+                                           required
+                                    >
+                                </div>
+                                <div class="col-auto">
+                                    <input class="form-control"
+                                           type="text"
+                                           value="{{ user.surname }}"
+                                           placeholder="Имя"
+                                           name="surname"
+                                           id="surname"
+                                           required
+                                    >
+                                </div>
+                            </div>
+                        </dd>
+                        <dt class="col-12 col-sm-3">
+                            <label class="form-label" for="email">Имейл</label>
+                        </dt>
+                        <dd class="col-12 col-sm-9">
+                            <div class="row justify-content-between align-items-center">
+                                <div class="col-auto">
+                                    <input class="form-control"
+                                           type="text"
+                                           value="{{ user.email }}"
+                                           placeholder="Имейл"
+                                           name="email"
+                                           id="email"
+                                           required
+                                    >
+                                </div>
+                                <div class="col-auto">
+                                <button class="btn btn-success" type="submit" form="edited_profile">
+                                    Сохранить
+                                </button>
+                            </div>
+                            </div>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal fade" id="password_change" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Смена пароля</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <span>
+                            <b>Внимание!</b> Страница обновится, и изменения всего, кроме пароля, не сохранятся.
+                        </span>
+                    </div>
+                    <form action="" method="post" id="new_credentials">
+                        <div class="mb-3">
+                            <input required
+                                   type="password"
+                                   name="new_password"
+                                   id="new_password"
+                                   maxlength="100"
+                                   class="form-control"
+                                   placeholder="Новый пароль"
+                            >
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" form="new_credentials">Сменить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
