@@ -9,10 +9,10 @@
                 <div class="col-12">
                     <div>
                         <label for="based_on" class="form-label">
-                            <span class="text-danger">(Страница обновится!)</span> Шаблон основан на
+                            Родительский шаблон
                         </label>
                         <select form="template" class="form-select" size="3" id="based_on" name="based_on" multiple>
-                            <option value="">выберите из списка</option>
+                            <option value="">отсутствует</option>
                             {% for t in Templates.query.all() %}
                                 <option value="{{ t.templ_id }}">{{ t.templ }}</option>
                             {% endfor %}
@@ -25,6 +25,8 @@
                                name="template_name"
                                placeholder="Введите текст"
                                form="template"
+                               oninput="checkTemplateAvailability(this, this.value)"
+                               required
                         >
                         <label for="template_name">Введите название шаблона</label>
                     </div>
@@ -685,7 +687,7 @@
             <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
                 <div class="col-3 col-xl-1 text-center">
                     <input class="form-control"
-                           type="number"
+                           type="number" required
                            value="${current_num}"
                            id="rank_${type}_${current_num}"
                            name="rank_${type}_${current_num}"
@@ -848,5 +850,35 @@
                 $('.is-invalid').focus();
             }
         });
+        function checkTemplateAvailability(input, value) {
+            if (value.length > 1) {
+                var packet = {
+                    type: 'template_availability',
+                    input: value
+                };
+                fetch('{{ url_for('editing_autocomplete') }}', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: JSON.stringify(packet),
+                    cache: 'no-cache',
+                    headers: new Headers({
+                        'content-type': 'application/json'
+                    })
+                })
+                .then(function (response) {
+                    if (response.status == 200) {
+                        response.json().then(function (status) {
+                            if (status) {
+                                $(input).removeClass('is-invalid');
+                                $(input).addClass('is-valid')
+                            } else {
+                                $(input).removeClass('is-valid');
+                                $(input).addClass('is-invalid')
+                            }
+                        })
+                    }
+                });
+            }
+        }
     </script>
 {% endblock %}

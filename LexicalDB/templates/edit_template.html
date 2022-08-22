@@ -10,10 +10,10 @@
                 <div class="col-12">
                     <div>
                         <label for="based_on" class="form-label">
-                            <span class="text-danger">(Страница обновится!)</span> Шаблон основан на
+                            Родительский шаблон
                         </label>
-                        <select class="form-select" size="3" id="based_on" name="based_on" multiple>
-                            <option value="">выберите из списка</option>
+                        <select class="form-select" size="3" id="based_on" name="based_on" multiple form="template">
+                            <option value="">отсутствует</option>
                             {% for t in Templates.query.all() %}
                                 {% if t.templ_id != templ_id %}
                                     <option value="{{ t.templ_id }}"{% if Template_relations.query.filter_by(templ_id=t.templ_id, target_id=templ_id, type=1).first() %}selected{% endif %}>{{ t.templ }}</option>
@@ -29,6 +29,8 @@
                                placeholder="Введите текст"
                                form="template"
                                value="{{ Templates.query.get(templ_id).templ }}"
+                               oninput="checkTemplateAvailability(this, this.value)"
+                               required
                         >
                         <label for="template_name">Введите название шаблона</label>
                     </div>
@@ -37,7 +39,7 @@
             <div class="col-12 col-lg-3">
                 <div class="text-center mb-2">
                     <button class="btn btn-sm btn-success" type="submit" form="template" id="submit_button">
-                        Добавить шаблон
+                        Сохранить
                     </button>
                 </div>
             </div>
@@ -78,11 +80,11 @@
             <div class="collapse show container overflow-auto" style="max-height: 60vh;" id="collapse_participants">
                 <div class="row row-cols-1 row-cols-lg-3 g-2" id="participants">
                     {% for p in Template_relations.query.filter_by(templ_id=templ_id, type=9).all() %}
-                        <div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="participant_1">
+                        <div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="existent_participant_{{ p.target_id }}">
                             <div class="col-auto row align-items-center justify-content-center g-2">
                                 <div class="col-auto">
                                     <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(existent_participant_{{ p.target_id }})">
-                                        Удалить
+                                        Открепить
                                     </button>
                                 </div>
                                 <div class="col-auto">
@@ -230,7 +232,6 @@
                 <textarea class="form-control overflow-auto"
                           id="example"
                           name="example"
-                          form="entry"
                           placeholder="Введите текст примера"
                           style="max-height: 300px">{% if Template_relations.query.filter_by(templ_id=templ_id, type=3).first() %}{{ Examples.query.get(Template_relations.query.filter_by(templ_id=templ_id, type=3).first().target_id).example }}{% endif %}</textarea>
             </div>
@@ -252,12 +253,13 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Initial_state" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=6).join(Initial_states, Template_relations.target_id==Initial_states.inst_id).order_by(Initial_states.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==1).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_I_{{ i.target_id }}">
                                 <div class="col-3 col-xl-1 text-center">
+                                    <span onclick="deleteESE(ese_existent_I_{{ i.target_id }})" type="button">❌</span>
                                     <input class="form-control"
-                                           type="number"
-                                           value="{{ Initial_states.query.get(i.target_id).rank }}"
+                                           type="number" required
+                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
                                            id="rank_existent_I_{{ i.target_id }}"
                                            name="rank_existent_I_{{ i.target_id }}"
                                            >
@@ -267,7 +269,7 @@
                                         <select class="form-select" id="is_child_existent_I_{{ i.target_id }}" name="is_child_existent_I_{{ i.target_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
-                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1, type_of_element='I').first() %} selected{% endif %}>{{t.templ}}</option>
+                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_I_{{ i.target_id }}">Родительский шаблон</label>
@@ -280,7 +282,7 @@
                                                placeholder="Введите текст"
                                                list="I_list"
                                                oninput="suggestions('I', existent_I_{{ i.target_id }}.value)"
-                                               value="{{ Initial_states.query.get(i.target_id).inst }}"
+                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
                                         >
                                         <label for="existent_I_{{ i.target_id }}">Введите описание</label>
                                     </div>
@@ -299,12 +301,13 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Beginning" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Beginnings, Template_relations.target_id==Beginnings.beg_id).order_by(Beginnings.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==2).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_B_{{ i.target_id }}">
                                 <div class="col-3 col-xl-1 text-center">
+                                    <span onclick="deleteESE(ese_existent_B_{{ i.target_id }})" type="button">❌</span>
                                     <input class="form-control"
-                                           type="number"
-                                           value="{{ Beginnings.query.get(i.target_id).rank }}"
+                                           type="number" required
+                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
                                            id="rank_existent_B_{{ i.target_id }}"
                                            name="rank_existent_B_{{ i.target_id }}"
                                            >
@@ -314,7 +317,7 @@
                                         <select class="form-select" id="is_child_existent_B_{{ i.target_id }}" name="is_child_existent_B_{{ i.target_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
-                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1, type_of_element='B').first() %} selected{% endif %}>{{t.templ}}</option>
+                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_B_{{ i.target_id }}">Родительский шаблон</label>
@@ -327,7 +330,7 @@
                                                placeholder="Введите текст"
                                                list="B_list"
                                                oninput="suggestions('B', existent_B_{{ i.target_id }}.value)"
-                                               value="{{ Beginnings.query.get(i.target_id).beg }}"
+                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
                                         >
                                         <label for="existent_B_{{ i.target_id }}">Введите описание</label>
                                     </div>
@@ -346,12 +349,13 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Process" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=7).join(Processes, Template_relations.target_id==Processes.proc_id).order_by(Processes.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==3).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_P_{{ i.target_id }}">
                                 <div class="col-3 col-xl-1 text-center">
+                                    <span type="button" href="();" onclick="deleteESE(ese_existent_P_{{ i.target_id }})">❌</span>
                                     <input class="form-control"
-                                           type="number"
-                                           value="{{ Processes.query.get(i.target_id).rank }}"
+                                           type="number" required
+                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
                                            id="rank_existent_P_{{ i.target_id }}"
                                            name="rank_existent_P_{{ i.target_id }}"
                                            >
@@ -361,7 +365,7 @@
                                         <select class="form-select" id="is_child_existent_P_{{ i.target_id }}" name="is_child_existent_P_{{ i.target_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
-                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1, type_of_element='P').first() %} selected{% endif %}>{{t.templ}}</option>
+                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_P_{{ i.target_id }}">Родительский шаблон</label>
@@ -374,7 +378,7 @@
                                                placeholder="Введите текст"
                                                list="P_list"
                                                oninput="suggestions('P', existent_P_{{ i.target_id }}.value)"
-                                               value="{{ Processes.query.get(i.target_id).proc }}"
+                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
                                         >
                                         <label for="existent_P_{{ i.target_id }}">Введите описание</label>
                                     </div>
@@ -393,12 +397,13 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Final_stage" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=4).join(Final_stages, Template_relations.target_id==Final_stages.fs_id).order_by(Final_stages.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==4).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_F_{{ i.target_id }}">
                                 <div class="col-3 col-xl-1 text-center">
+                                    <span onclick="deleteESE(ese_existent_F_{{ i.target_id }})" type="button">❌</span>
                                     <input class="form-control"
-                                           type="number"
-                                           value="{{ Final_stages.query.get(i.target_id).rank }}"
+                                           type="number" required
+                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
                                            id="rank_existent_F_{{ i.target_id }}"
                                            name="rank_existent_F_{{ i.target_id }}"
                                            >
@@ -408,7 +413,7 @@
                                         <select class="form-select" id="is_child_existent_F_{{ i.target_id }}" name="is_child_existent_F_{{ i.target_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
-                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1, type_of_element='F').first() %} selected{% endif %}>{{t.templ}}</option>
+                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_F_{{ i.target_id }}">Родительский шаблон</label>
@@ -421,7 +426,7 @@
                                                placeholder="Введите текст"
                                                list="F_list"
                                                oninput="suggestions('F', existent_F_{{ i.target_id }}.value)"
-                                               value="{{ Final_stages.query.get(i.target_id).fs }}"
+                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
                                         >
                                         <label for="existent_F_{{ i.target_id }}">Введите описание</label>
                                     </div>
@@ -440,12 +445,13 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Result" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=8).join(Results, Template_relations.target_id==Results.res_id).order_by(Results.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==5).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_R_{{ i.target_id }}">
                                 <div class="col-3 col-xl-1 text-center">
+                                    <span onclick="deleteESE(ese_existent_R_{{ i.target_id }})" type="button">❌</span>
                                     <input class="form-control"
-                                           type="number"
-                                           value="{{ Results.query.get(i.target_id).rank }}"
+                                           type="number" required
+                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
                                            id="rank_existent_R_{{ i.target_id }}"
                                            name="rank_existent_R_{{ i.target_id }}"
                                            >
@@ -455,7 +461,7 @@
                                         <select class="form-select" id="is_child_existent_R_{{ i.target_id }}" name="is_child_existent_R_{{ i.target_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
-                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1, type_of_element='R').first() %} selected{% endif %}>{{t.templ}}</option>
+                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_R_{{ i.target_id }}">Родительский шаблон</label>
@@ -468,7 +474,7 @@
                                                placeholder="Введите текст"
                                                list="R_list"
                                                oninput="suggestions('R', existent_R_{{ i.target_id }}.value)"
-                                               value="{{ Results.query.get(i.target_id).res }}"
+                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
                                         >
                                         <label for="existent_R_{{ i.target_id }}">Введите описание</label>
                                     </div>
@@ -487,12 +493,13 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto" id="Implication" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=5).join(Implications, Template_relations.target_id==Implications.impl_id).order_by(Implications.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==6).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_Impl_{{ i.target_id }}">
                                 <div class="col-3 col-xl-1 text-center">
+                                    <span onclick="deleteESE(ese_existent_Impl_{{ i.target_id }})" type="button">❌</span>
                                     <input class="form-control"
-                                           type="number"
-                                           value="{{ Implications.query.get(i.target_id).rank }}"
+                                           type="number" required
+                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
                                            id="rank_existent_Impl_{{ i.target_id }}"
                                            name="rank_existent_Impl_{{ i.target_id }}"
                                            >
@@ -502,7 +509,7 @@
                                         <select class="form-select" id="is_child_existent_Impl_{{ i.target_id }}" name="is_child_existent_Impl_{{ i.target_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
-                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1, type_of_element='Impl').first() %} selected{% endif %}>{{t.templ}}</option>
+                                                <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(element_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_Impl_{{ i.target_id }}">Родительский шаблон</label>
@@ -515,7 +522,7 @@
                                                placeholder="Введите текст"
                                                list="Impl_list"
                                                oninput="suggestions('Impl', existent_Impl_{{ i.target_id }}.value)"
-                                               value="{{ Implications.query.get(i.target_id).impl }}"
+                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
                                                >
                                         <label for="existent_Impl_{{ i.target_id }}">Введите описание</label>
                                     </div>
@@ -550,7 +557,7 @@
                     <div class="col-auto row align-items-center justify-content-center g-2">
                         <div class="col-auto">
                             <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_${current_num})">
-                                Удалить
+                                Открепить
                             </button>
                         </div>
                     </div>
@@ -726,7 +733,7 @@
                                 <div class="col-auto row align-items-center justify-content-center g-2">
                                     <div class="col-auto">
                                         <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_${current_num})">
-                                            Удалить
+                                            Открепить
                                         </button>
                                     </div>
                                 </div>
@@ -903,7 +910,7 @@
             <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
                 <div class="col-3 col-xl-1 text-center">
                     <input class="form-control"
-                           type="number"
+                           type="number" required
                            value="${current_num}"
                            id="rank_${type}_${current_num}"
                            name="rank_${type}_${current_num}"
@@ -940,7 +947,23 @@
         }
 
         function deleteParticipant(participant) {
+            if (participant.id.includes('existent')) {
+                var p_id = participant.id.split('_').slice(-1);
+                $('#template').append(
+                    `<input class="d-none" type="text" name="delete_p_${p_id}" value="${p_id}">`
+                )
+            };
             participant.remove()
+        }
+
+        function deleteESE(ese) {
+            if (ese.id.includes('existent')) {
+                var ese_id = ese.id.split('_').slice(-1);
+                $('#template').append(
+                    `<input class="d-none" type="text" name="delete_ese_${ese_id}" value="${ese_id}">`
+                )
+            };
+            ese.remove()
         }
 
         function suggestions(type, input) {
@@ -1002,6 +1025,39 @@
                 });
             }
         }
+
+        function checkTemplateAvailability(input, value) {
+            if (value.length > 1) {
+                var packet = {
+                    type: 'template_availability',
+                    input: value,
+                    templ_id: {{ templ_id }}
+                };
+                fetch('{{ url_for('editing_autocomplete') }}', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: JSON.stringify(packet),
+                    cache: 'no-cache',
+                    headers: new Headers({
+                        'content-type': 'application/json'
+                    })
+                })
+                .then(function (response) {
+                    if (response.status == 200) {
+                        response.json().then(function (status) {
+                            if (status) {
+                                $(input).removeClass('is-invalid');
+                                $(input).addClass('is-valid')
+                            } else {
+                                $(input).removeClass('is-valid');
+                                $(input).addClass('is-invalid')
+                            }
+                        })
+                    }
+                });
+            }
+        }
+
         $('#template').submit(function(event) {
             if ($('.is-invalid').length) {
                 alert('Удостоверьтесь, что все ярлыки уникальны.')

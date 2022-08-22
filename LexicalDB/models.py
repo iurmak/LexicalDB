@@ -19,39 +19,13 @@ class Users(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey(Roles.role_id), default=1)
     last_seen = db.Column(db.Integer, nullable=False)
 
-class Beginnings(db.Model):
-    beg_id = db.Column(db.Integer, primary_key=True)
-    beg = db.Column(db.Text, unique=True)
-    rank = db.Column(db.Integer)
-
 class Examples(db.Model):
     example_id = db.Column(db.Integer, primary_key=True)
     example = db.Column(db.Text, unique=False)
-
-class Final_stages(db.Model):
-    fs_id = db.Column(db.Integer, primary_key=True)
-    fs = db.Column(db.Text, unique=True)
-    rank = db.Column(db.Integer)
-
-class Implications(db.Model):
-    impl_id = db.Column(db.Integer, primary_key=True)
-    impl = db.Column(db.Text, unique=True)
-    rank = db.Column(db.Integer)
-
-class Initial_states(db.Model):
-    inst_id = db.Column(db.Integer, primary_key=True)
-    inst = db.Column(db.Text, unique=True)
-    rank = db.Column(db.Integer)
-
-class Processes(db.Model):
-    proc_id = db.Column(db.Integer, primary_key=True)
-    proc = db.Column(db.Text, unique=True)
-    rank = db.Column(db.Integer)
-
-class Results(db.Model):
-    res_id = db.Column(db.Integer, primary_key=True)
-    res = db.Column(db.Text, unique=True)
-    rank = db.Column(db.Integer)
+    original_script = db.Column(db.Text, unique=False, nullable=True)
+    translation = db.Column(db.Text, unique=False, nullable=True)
+    source = db.Column(db.Text, unique=False, nullable=True)
+    comment = db.Column(db.Text, unique=False, nullable=True)
 
 class Semantic_roles(db.Model):
     sr_id = db.Column(db.Integer, primary_key=True)
@@ -86,11 +60,36 @@ class Templates(db.Model):
 class Template_relations(db.Model):
     templ_id = db.Column(db.Integer, db.ForeignKey(Templates.templ_id))
     target_id = db.Column(db.Integer, unique=False, primary_key=True)
-    type = db.Column(db.Integer, unique=False) #1 -- parent-child, 2 -- beg, 3 -- example, 4 -- final stage, 5 -- impl,\
-    # 6 -- inst, 7 -- proc, 8 -- res, 9 -- template-participant
+    type = db.Column(db.Integer, unique=False) #1 -- parent-child, 2 -- ese, 9 -- template-participant
+
+class Event_structure(db.Model):
+    ese_id = db.Column(db.Integer, nullable=False, primary_key=True)
+    ese = db.Column(db.Text, unique=False, nullable=False)
+    type = db.Column(db.Integer, unique=False, nullable=False) #1 -- Initial States, 2 -- beginning, 3 -- Process, 4 -- Final stage, 5 -- Result, 6 -- Implications
+    rank = db.Column(db.Integer, unique=False, nullable=False)
 
 class Event_structure_relations(db.Model):
     element_id = db.Column(db.Integer, nullable=False)
-    type_of_element = db.Column(db.Text, unique=False, nullable=False)
     target_id = db.Column(db.Integer, unique=False, primary_key=True)
     type = db.Column(db.Integer, unique=False, nullable=False) #1 -- belonging to a template
+
+class Parts_of_speech(db.Model):
+    pos_id = db.Column(db.Integer, primary_key=True)
+    pos = db.Column(db.Text, unique=True)
+    full_name = db.Column(db.Text, unique=True, nullable=True)
+
+class Languages(db.Model):
+    lang_id = db.Column(db.Integer, primary_key=True)
+    lang = db.Column(db.Text, unique=True)
+    code = db.Column(db.Text, unique=True, nullable=True)
+
+class Lexemes(db.Model):
+    lex_id = db.Column(db.Integer, primary_key=True)
+    lang_id = db.Column(db.Integer, db.ForeignKey(Languages.lang_id))
+    pos_is = db.Column(db.Integer, db.ForeignKey(Parts_of_speech.pos_id))
+
+class Forms(db.Model):
+    form_id = db.Column(db.Integer, primary_key=True)
+    lex_id = db.Column(db.Integer, db.ForeignKey(Lexemes.lex_id))
+    type = db.Column(db.Integer, nullable=False)
+    form = db.Column(db.Text, nullable=False)
