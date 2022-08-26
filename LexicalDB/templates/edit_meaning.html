@@ -1,50 +1,37 @@
 {% extends 'base.html' %}
 {% block title %}
-    Редактирование шаблона № {{ templ_id }}
+    Редактирование значения
 {% endblock %}
 {% block content %}
     <div class="container mb-2">
-        <div class="container row mb-2 align-items-center justify-content-start">
-            <div class="container row mb-2 g-2 align-items-center justify-content-start">
+        <div class="container row mb-2 g-2 align-items-center justify-content-start">
             <div class="col-12 col-lg-9 row g-2">
                 <div class="col-12">
-                    <div>
-                        <label for="based_on" class="form-label">
-                            Родительский шаблон
-                        </label>
-                        <select class="form-select" size="3" id="based_on" name="based_on" multiple form="template">
+                    <div class="form-floating">
+                        <select form="meaning" class="form-select" id="based_on" name="based_on" onchange="addFromTemplate(this.value)" disabled>
                             <option value="">отсутствует</option>
                             {% for t in Templates.query.all() %}
-                                {% if t.templ_id != templ_id %}
-                                    <option value="{{ t.templ_id }}"{% if Template_relations.query.filter_by(templ_id=t.templ_id, target_id=templ_id, type=1).first() %}selected{% endif %}>{{ t.templ }}</option>
-                                {% endif %}
+                                <option value="{{ t.templ_id }}" {% if Template_relations.query.filter_by(target_id=m.m_id, type=4).first() and t.templ_id == Template_relations.query.filter_by(target_id=m.m_id, type=4).first().templ_id %}selected{% endif %}>{{ t.templ }}</option>
                             {% endfor %}
                         </select>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="form-floating">
-                        <input type="text" class="form-control" id="template_name"
-                               name="template_name"
-                               placeholder="Введите текст"
-                               form="template"
-                               value="{{ Templates.query.get(templ_id).templ }}"
-                               oninput="checkTemplateAvailability(this, this.value)"
-                               required
-                        >
-                        <label for="template_name">Введите название шаблона</label>
+                        <label for="based_on">
+                            Родительский шаблон
+                        </label>
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-lg-3">
-                <div class="text-center mb-2">
-                    <button class="btn btn-sm btn-success" type="submit" form="template" id="submit_button">
+            <div class="col-12 col-lg-3 row align-items-center justify-content-center g-2">
+                <div class="col-12 text-center">
+                    Лексема: <a href="{{ url_for('edit_lexeme', lex_id=m.lex_id) }}" target="_blank"><b>{{ Forms.query.filter_by(lex_id=m.lex_id).first().form }} (ID {{ m.lex_id }})</b></a>
+                </div>
+                <div class="col-12 text-center mb-2">
+                    <button class="btn btn-sm btn-success" type="submit" form="meaning">
                         Сохранить
                     </button>
                 </div>
             </div>
         </div>
-        <form name="template" id="template" method="post">
+        <form name="meaning" id="meaning" method="post">
             <div class="container row g-2 mb-2 align-items-center justify-content-start">
                 <div class="col-auto">
                     <span class="form-label h5">Участники</span>
@@ -79,7 +66,7 @@
             </div>
             <div class="collapse show container overflow-auto" style="max-height: 60vh;" id="collapse_participants">
                 <div class="row row-cols-1 row-cols-lg-3 g-2" id="participants">
-                    {% for p in Template_relations.query.filter_by(templ_id=templ_id, type=9).all() %}
+                    {% for p in Participant_relations.query.filter_by(target_id=m.m_id, type=4).all() %}
                         <div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="existent_participant_{{ p.target_id }}">
                             <div class="col-auto row align-items-center justify-content-center g-2">
                                 <div class="col-auto">
@@ -99,7 +86,6 @@
                                            name="existent_label_{{ p.target_id }}"
                                            placeholder="Введите текст"
                                            value="{{ Participants.query.get(p.target_id).participant }}"
-                                           oninput="checkLabelAvailability(this, this.value)"
                                            disabled
                                            required
                                     >
@@ -233,7 +219,14 @@
                           id="example"
                           name="example"
                           placeholder="Введите текст примера"
-                          style="max-height: 300px">{% if Template_relations.query.filter_by(templ_id=templ_id, type=3).first() %}{{ Examples.query.get(Template_relations.query.filter_by(templ_id=templ_id, type=3).first().target_id).example }}{% endif %}</textarea>
+                          style="max-height: 300px">{{ Examples.query.get(m.example_id).example }}</textarea>
+            </div>
+            <div class="container mb-2">
+                <textarea class="form-control overflow-auto"
+                          id="government"
+                          name="government"
+                          placeholder="Введите формулу управления"
+                          style="max-height: 300px">{{ m.government }}</textarea>
             </div>
             <div class="container mb-2">
                 <div class="row g-2 mb-2 align-items-center justify-content-start">
@@ -253,40 +246,50 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Initial_state" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==1).order_by(Event_structure.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_I_{{ i.target_id }}">
-                                <div class="col-3 col-xl-1 text-center">
-                                    <span onclick="deleteESE(ese_existent_I_{{ i.target_id }})" type="button">❌</span>
-                                    <input class="form-control"
-                                           type="number" required
-                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
-                                           id="rank_existent_I_{{ i.target_id }}"
-                                           name="rank_existent_I_{{ i.target_id }}"
-                                           >
+                        {% for i in Event_structure_relations.query.filter_by(target_id=m.m_id, type=2).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).filter(Event_structure.type==1).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_I_{{ i.ese_id }}">
+                                <div class="col-3 col-xl-2 g-2 mt-0 row row-cols-1 align-items-center justify-content-center">
+                                    <div class="col-auto">
+                                        <span type="button" href="();" onclick="deleteESE(ese_existent_I_{{ i.ese_id }})">❌</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <input class="form-control form-control-sm"
+                                               type="number" required
+                                               value="{{ Event_structure.query.get(i.ese_id).rank }}"
+                                               id="rank_existent_I_{{ i.ese_id }}"
+                                               name="rank_existent_I_{{ i.ese_id }}"
+                                               >
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select form-select-sm" id="status_ese_existent_I_{{ i.ese_id }}" name="status_ese_existent_I_{{ i.ese_id }}">
+                                            <option value="1" {% if m.status == 1 %}selected{% endif %}>ассерция</option>
+                                            <option value="2" {% if m.status == 2 %}selected{% endif %}>пресуппозиция</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="col-9 col-xl-3">
+                                <div class="col-9 col-xl-2">
                                     <div class="form-floating">
-                                        <select class="form-select" id="is_child_existent_I_{{ i.target_id }}" name="is_child_existent_I_{{ i.target_id }}">
+                                        <select class="form-select" id="is_child_existent_I_{{ i.ese_id }}" name="is_child_existent_I_{{ i.ese_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
-                                        <label for="is_child_existent_I_{{ i.target_id }}">Родительский шаблон</label>
+                                        <label for="is_child_existent_I_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
                                 <div class="col-12 col-xl-8">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" id="existent_I_{{ i.target_id }}"
-                                               name="existent_I_{{ i.target_id }}"
+                                        <input type="text" class="form-control" id="existent_I_{{ i.ese_id }}"
+                                               name="existent_I_{{ i.ese_id }}"
                                                placeholder="Введите текст"
                                                list="I_list"
-                                               oninput="suggestions('I', existent_I_{{ i.target_id }}.value)"
-                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
+                                               oninput="suggestions('I', existent_I_{{ i.ese_id }}.value)"
+                                               value="{{ Event_structure.query.get(i.ese_id).ese }}"
                                         >
-                                        <label for="existent_I_{{ i.target_id }}">Введите описание</label>
+                                        <label for="existent_I_{{ i.ese_id }}">Введите описание</label>
                                     </div>
                                 </div>
                             </div>
@@ -303,40 +306,50 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Beginning" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==2).order_by(Event_structure.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_B_{{ i.target_id }}">
-                                <div class="col-3 col-xl-1 text-center">
-                                    <span onclick="deleteESE(ese_existent_B_{{ i.target_id }})" type="button">❌</span>
-                                    <input class="form-control"
-                                           type="number" required
-                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
-                                           id="rank_existent_B_{{ i.target_id }}"
-                                           name="rank_existent_B_{{ i.target_id }}"
-                                           >
+                        {% for i in Event_structure_relations.query.filter_by(target_id=m.m_id, type=2).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).filter(Event_structure.type==2).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_B_{{ i.ese_id }}">
+                                <div class="col-3 col-xl-2 g-2 mt-0 row row-cols-1 align-items-center justify-content-center">
+                                    <div class="col-auto">
+                                        <span type="button" href="();" onclick="deleteESE(ese_existent_B_{{ i.ese_id }})">❌</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <input class="form-control form-control-sm"
+                                               type="number" required
+                                               value="{{ Event_structure.query.get(i.ese_id).rank }}"
+                                               id="rank_existent_B_{{ i.ese_id }}"
+                                               name="rank_existent_B_{{ i.ese_id }}"
+                                               >
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select form-select-sm" id="status_ese_existent_B_{{ i.ese_id }}" name="status_ese_existent_B_{{ i.ese_id }}">
+                                            <option value="1" {% if m.status == 1 %}selected{% endif %}>ассерция</option>
+                                            <option value="2" {% if m.status == 2 %}selected{% endif %}>пресуппозиция</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="col-9 col-xl-3">
+                                <div class="col-9 col-xl-2">
                                     <div class="form-floating">
-                                        <select class="form-select" id="is_child_existent_B_{{ i.target_id }}" name="is_child_existent_B_{{ i.target_id }}">
+                                        <select class="form-select" id="is_child_existent_B_{{ i.ese_id }}" name="is_child_existent_B_{{ i.ese_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
-                                        <label for="is_child_existent_B_{{ i.target_id }}">Родительский шаблон</label>
+                                        <label for="is_child_existent_B_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
                                 <div class="col-12 col-xl-8">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" id="existent_B_{{ i.target_id }}"
-                                               name="existent_B_{{ i.target_id }}"
+                                        <input type="text" class="form-control" id="existent_B_{{ i.ese_id }}"
+                                               name="existent_B_{{ i.ese_id }}"
                                                placeholder="Введите текст"
                                                list="B_list"
-                                               oninput="suggestions('B', existent_B_{{ i.target_id }}.value)"
-                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
+                                               oninput="suggestions('B', existent_B_{{ i.ese_id }}.value)"
+                                               value="{{ Event_structure.query.get(i.ese_id).ese }}"
                                         >
-                                        <label for="existent_B_{{ i.target_id }}">Введите описание</label>
+                                        <label for="existent_B_{{ i.ese_id }}">Введите описание</label>
                                     </div>
                                 </div>
                             </div>
@@ -353,40 +366,50 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Process" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==3).order_by(Event_structure.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_P_{{ i.target_id }}">
-                                <div class="col-3 col-xl-1 text-center">
-                                    <span type="button" href="();" onclick="deleteESE(ese_existent_P_{{ i.target_id }})">❌</span>
-                                    <input class="form-control"
-                                           type="number" required
-                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
-                                           id="rank_existent_P_{{ i.target_id }}"
-                                           name="rank_existent_P_{{ i.target_id }}"
-                                           >
+                        {% for i in Event_structure_relations.query.filter_by(target_id=m.m_id, type=2).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).filter(Event_structure.type==3).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_P_{{ i.ese_id }}">
+                                <div class="col-3 col-xl-2 g-2 mt-0 row row-cols-1 align-items-center justify-content-center">
+                                    <div class="col-auto">
+                                        <span type="button" href="();" onclick="deleteESE(ese_existent_P_{{ i.ese_id }})">❌</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <input class="form-control form-control-sm"
+                                               type="number" required
+                                               value="{{ Event_structure.query.get(i.ese_id).rank }}"
+                                               id="rank_existent_P_{{ i.ese_id }}"
+                                               name="rank_existent_P_{{ i.ese_id }}"
+                                               >
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select form-select-sm" id="status_ese_existent_P_{{ i.ese_id }}" name="status_ese_existent_P_{{ i.ese_id }}">
+                                            <option value="1" {% if m.status == 1 %}selected{% endif %}>ассерция</option>
+                                            <option value="2" {% if m.status == 2 %}selected{% endif %}>пресуппозиция</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="col-9 col-xl-3">
+                                <div class="col-9 col-xl-2">
                                     <div class="form-floating">
-                                        <select class="form-select" id="is_child_existent_P_{{ i.target_id }}" name="is_child_existent_P_{{ i.target_id }}">
+                                        <select class="form-select" id="is_child_existent_P_{{ i.ese_id }}" name="is_child_existent_P_{{ i.ese_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
-                                        <label for="is_child_existent_P_{{ i.target_id }}">Родительский шаблон</label>
+                                        <label for="is_child_existent_P_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
                                 <div class="col-12 col-xl-8">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control overflow-auto" id="existent_P_{{ i.target_id }}"
-                                               name="existent_P_{{ i.target_id }}"
+                                        <input type="text" class="form-control overflow-auto" id="existent_P_{{ i.ese_id }}"
+                                               name="existent_P_{{ i.ese_id }}"
                                                placeholder="Введите текст"
                                                list="P_list"
-                                               oninput="suggestions('P', existent_P_{{ i.target_id }}.value)"
-                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
+                                               oninput="suggestions('P', existent_P_{{ i.ese_id }}.value)"
+                                               value="{{ Event_structure.query.get(i.ese_id).ese }}"
                                         >
-                                        <label for="existent_P_{{ i.target_id }}">Введите описание</label>
+                                        <label for="existent_P_{{ i.ese_id }}">Введите описание</label>
                                     </div>
                                 </div>
                             </div>
@@ -403,40 +426,50 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Final_stage" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==4).order_by(Event_structure.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_F_{{ i.target_id }}">
-                                <div class="col-3 col-xl-1 text-center">
-                                    <span onclick="deleteESE(ese_existent_F_{{ i.target_id }})" type="button">❌</span>
-                                    <input class="form-control"
-                                           type="number" required
-                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
-                                           id="rank_existent_F_{{ i.target_id }}"
-                                           name="rank_existent_F_{{ i.target_id }}"
-                                           >
+                        {% for i in Event_structure_relations.query.filter_by(target_id=m.m_id, type=2).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).filter(Event_structure.type==4).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_F_{{ i.ese_id }}">
+                                <div class="col-3 col-xl-2 g-2 mt-0 row row-cols-1 align-items-center justify-content-center">
+                                    <div class="col-auto">
+                                        <span type="button" href="();" onclick="deleteESE(ese_existent_F_{{ i.ese_id }})">❌</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <input class="form-control form-control-sm"
+                                               type="number" required
+                                               value="{{ Event_structure.query.get(i.ese_id).rank }}"
+                                               id="rank_existent_F_{{ i.ese_id }}"
+                                               name="rank_existent_F_{{ i.ese_id }}"
+                                               >
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select form-select-sm" id="status_ese_existent_F_{{ i.ese_id }}" name="status_ese_existent_F_{{ i.ese_id }}">
+                                            <option value="1" {% if m.status == 1 %}selected{% endif %}>ассерция</option>
+                                            <option value="2" {% if m.status == 2 %}selected{% endif %}>пресуппозиция</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="col-9 col-xl-3">
+                                <div class="col-9 col-xl-2">
                                     <div class="form-floating">
-                                        <select class="form-select" id="is_child_existent_F_{{ i.target_id }}" name="is_child_existent_F_{{ i.target_id }}">
+                                        <select class="form-select" id="is_child_existent_F_{{ i.ese_id }}" name="is_child_existent_F_{{ i.ese_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
-                                        <label for="is_child_existent_F_{{ i.target_id }}">Родительский шаблон</label>
+                                        <label for="is_child_existent_F_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
                                 <div class="col-12 col-xl-8">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" id="existent_F_{{ i.target_id }}"
-                                               name="existent_F_{{ i.target_id }}"
+                                        <input type="text" class="form-control" id="existent_F_{{ i.ese_id }}"
+                                               name="existent_F_{{ i.ese_id }}"
                                                placeholder="Введите текст"
                                                list="F_list"
-                                               oninput="suggestions('F', existent_F_{{ i.target_id }}.value)"
-                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
+                                               oninput="suggestions('F', existent_F_{{ i.ese_id }}.value)"
+                                               value="{{ Event_structure.query.get(i.ese_id).ese }}"
                                         >
-                                        <label for="existent_F_{{ i.target_id }}">Введите описание</label>
+                                        <label for="existent_F_{{ i.ese_id }}">Введите описание</label>
                                     </div>
                                 </div>
                             </div>
@@ -453,40 +486,50 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto border-bottom border-2 mb-2" id="Result" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==5).order_by(Event_structure.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_R_{{ i.target_id }}">
-                                <div class="col-3 col-xl-1 text-center">
-                                    <span onclick="deleteESE(ese_existent_R_{{ i.target_id }})" type="button">❌</span>
-                                    <input class="form-control"
-                                           type="number" required
-                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
-                                           id="rank_existent_R_{{ i.target_id }}"
-                                           name="rank_existent_R_{{ i.target_id }}"
-                                           >
+                        {% for i in Event_structure_relations.query.filter_by(target_id=m.m_id, type=2).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).filter(Event_structure.type==5).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_R_{{ i.ese_id }}">
+                                <div class="col-3 col-xl-2 g-2 mt-0 row row-cols-1 align-items-center justify-content-center">
+                                    <div class="col-auto">
+                                        <span type="button" href="();" onclick="deleteESE(ese_existent_R_{{ i.ese_id }})">❌</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <input class="form-control form-control-sm"
+                                               type="number" required
+                                               value="{{ Event_structure.query.get(i.ese_id).rank }}"
+                                               id="rank_existent_R_{{ i.ese_id }}"
+                                               name="rank_existent_R_{{ i.ese_id }}"
+                                               >
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select form-select-sm" id="status_ese_existent_R_{{ i.ese_id }}" name="status_ese_existent_R_{{ i.ese_id }}">
+                                            <option value="1" {% if m.status == 1 %}selected{% endif %}>ассерция</option>
+                                            <option value="2" {% if m.status == 2 %}selected{% endif %}>пресуппозиция</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="col-9 col-xl-3">
+                                <div class="col-9 col-xl-2">
                                     <div class="form-floating">
-                                        <select class="form-select" id="is_child_existent_R_{{ i.target_id }}" name="is_child_existent_R_{{ i.target_id }}">
+                                        <select class="form-select" id="is_child_existent_R_{{ i.ese_id }}" name="is_child_existent_R_{{ i.ese_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
-                                        <label for="is_child_existent_R_{{ i.target_id }}">Родительский шаблон</label>
+                                        <label for="is_child_existent_R_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
                                 <div class="col-12 col-xl-8">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" id="existent_R_{{ i.target_id }}"
-                                               name="existent_R_{{ i.target_id }}"
+                                        <input type="text" class="form-control" id="existent_R_{{ i.ese_id }}"
+                                               name="existent_R_{{ i.ese_id }}"
                                                placeholder="Введите текст"
                                                list="R_list"
-                                               oninput="suggestions('R', existent_R_{{ i.target_id }}.value)"
-                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
+                                               oninput="suggestions('R', existent_R_{{ i.ese_id }}.value)"
+                                               value="{{ Event_structure.query.get(i.ese_id).ese }}"
                                         >
-                                        <label for="existent_R_{{ i.target_id }}">Введите описание</label>
+                                        <label for="existent_R_{{ i.ese_id }}">Введите описание</label>
                                     </div>
                                 </div>
                             </div>
@@ -503,45 +546,65 @@
                         </div>
                     </div>
                     <div class="row row-cols-1 g-2 overflow-auto" id="Implication" style="max-height: 30vh;">
-                        {% for i in Template_relations.query.filter_by(templ_id=templ_id, type=2).join(Event_structure, Template_relations.target_id==Event_structure.ese_id).filter(Event_structure.type==6).order_by(Event_structure.rank.asc()).all() %}
-                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_Impl_{{ i.target_id }}">
-                                <div class="col-3 col-xl-1 text-center">
-                                    <span onclick="deleteESE(ese_existent_Impl_{{ i.target_id }})" type="button">❌</span>
-                                    <input class="form-control"
-                                           type="number" required
-                                           value="{{ Event_structure.query.get(i.target_id).rank }}"
-                                           id="rank_existent_Impl_{{ i.target_id }}"
-                                           name="rank_existent_Impl_{{ i.target_id }}"
-                                           >
+                        {% for i in Event_structure_relations.query.filter_by(target_id=m.m_id, type=2).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).filter(Event_structure.type==6).order_by(Event_structure.rank.asc()).all() %}
+                            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_existent_Impl_{{ i.ese_id }}">
+                                <div class="col-3 col-xl-2 g-2 mt-0 row row-cols-1 align-items-center justify-content-center">
+                                    <div class="col-auto">
+                                        <span type="button" href="();" onclick="deleteESE(ese_existent_Impl_{{ i.ese_id }})">❌</span>
+                                    </div>
+                                    <div class="col-auto">
+                                        <input class="form-control form-control-sm"
+                                               type="number" required
+                                               value="{{ Event_structure.query.get(i.ese_id).rank }}"
+                                               id="rank_existent_Impl_{{ i.ese_id }}"
+                                               name="rank_existent_Impl_{{ i.ese_id }}"
+                                               >
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select form-select-sm" id="status_ese_existent_Impl_{{ i.ese_id }}" name="status_ese_existent_Impl_{{ i.ese_id }}">
+                                            <option value="1" {% if m.status == 1 %}selected{% endif %}>ассерция</option>
+                                            <option value="2" {% if m.status == 2 %}selected{% endif %}>пресуппозиция</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="col-9 col-xl-3">
+                                <div class="col-9 col-xl-2">
                                     <div class="form-floating">
-                                        <select class="form-select" id="is_child_existent_Impl_{{ i.target_id }}" name="is_child_existent_Impl_{{ i.target_id }}">
+                                        <select class="form-select" id="is_child_existent_Impl_{{ i.ese_id }}" name="is_child_existent_Impl_{{ i.ese_id }}">
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.target_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
-                                        <label for="is_child_existent_Impl_{{ i.target_id }}">Родительский шаблон</label>
+                                        <label for="is_child_existent_Impl_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
                                 <div class="col-12 col-xl-8">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" id="existent_Impl_{{ i.target_id }}"
-                                               name="existent_Impl_{{ i.target_id }}"
+                                        <input type="text" class="form-control" id="existent_Impl_{{ i.ese_id }}"
+                                               name="existent_Impl_{{ i.ese_id }}"
                                                placeholder="Введите текст"
                                                list="Impl_list"
-                                               oninput="suggestions('Impl', existent_Impl_{{ i.target_id }}.value)"
-                                               value="{{ Event_structure.query.get(i.target_id).ese }}"
+                                               oninput="suggestions('Impl', existent_Impl_{{ i.ese_id }}.value)"
+                                               value="{{ Event_structure.query.get(i.ese_id).ese }}"
                                                >
-                                        <label for="existent_Impl_{{ i.target_id }}">Введите описание</label>
+                                        <label for="existent_Impl_{{ i.ese_id }}">Введите описание</label>
                                     </div>
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
+                </div>
+            </div>
+            <div class="container mb-2">
+                <div class="row g-2 mb-2 align-items-center justify-content-start">
+                    <div class="col-auto">
+                        <span class="form-label h5">Связанные единицы</span>
+                    </div>
+                </div>
+                <div class="container mb-2">
+                    ???
                 </div>
             </div>
         </form>
@@ -569,7 +632,7 @@
                     <div class="col-auto row align-items-center justify-content-center g-2">
                         <div class="col-auto">
                             <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_${current_num})">
-                                Открепить
+                                Удалить
                             </button>
                         </div>
                     </div>
@@ -578,7 +641,6 @@
                             <input type="text" class="form-control" id="label_${current_num}"
                                    name="label_${current_num}"
                                    placeholder="Введите текст"
-                                   oninput="checkLabelAvailability(this, this.value)"
                                    required
                             >
                             <label for="label_${current_num}">Ярлык</label>
@@ -745,7 +807,7 @@
                                 <div class="col-auto row align-items-center justify-content-center g-2">
                                     <div class="col-auto">
                                         <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_${current_num})">
-                                            Открепить
+                                            Удалить
                                         </button>
                                     </div>
                                 </div>
@@ -754,7 +816,6 @@
                                         <input type="text" class="form-control" id="label_${current_num}"
                                                name="label_${current_num}"
                                                placeholder="Введите текст"
-                                               oninput="checkLabelAvailability(this, this.value)"
                                                required
                                         >
                                         <label for="label_${current_num}">Ярлык</label>
@@ -920,22 +981,28 @@
             $(`#${id}`).append(
             `
             <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
-                <div class="col-3 col-xl-1 text-center">
-                    <input class="form-control"
-                           type="number" required
-                           value="${current_num}"
-                           id="rank_${type}_${current_num}"
-                           name="rank_${type}_${current_num}"
-                           >
+                <div class="col-3 col-xl-2 g-2 mt-0 row align-items-center justify-content-center">
+                    <div class="col-auto">
+                        <input class="form-control form-control-sm"
+                               type="number" required
+                               value="${current_num}"
+                               id="rank_${type}_${current_num}"
+                               name="rank_${type}_${current_num}"
+                               >
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}}" name="status_ese_${type}_${current_num}">
+                            <option value="1">ассерция</option>
+                            <option value="2">пресуппозиция</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="col-9 col-xl-3">
+                <div class="col-9 col-xl-2">
                     <div class="form-floating">
                         <select class="form-select" id="is_child_${type}_${current_num}}" name="is_child_${type}_${current_num}">
-                            <option value="">текущий</option>
+                            <option value="">нет</option>
                             {% for t in Templates.query.all() %}
-                                {% if t.templ_id != templ_id %}
-                                    <option value="{{t.templ_id}}">{{t.templ}}</option>
-                                {% endif %}
+                                <option value="{{t.templ_id}}">{{t.templ}}</option>
                             {% endfor %}
                         </select>
                         <label for="is_child_${type}_${current_num}">Родительский шаблон</label>
@@ -968,8 +1035,8 @@
                 )
             };
             participant.remove()
-        }
-
+        };
+        
         function deleteESE(ese) {
             if (ese.id.includes('existent')) {
                 var ese_id = ese.id.split('_').slice(-1);
@@ -978,7 +1045,7 @@
                 )
             };
             ese.remove()
-        }
+        };
 
         function suggestions(type, input) {
             $(`#${type}_list`).empty();
@@ -1009,68 +1076,6 @@
                 });
             }
         }
-        function checkLabelAvailability(input, value) {
-            if (value.length > 1) {
-                var packet = {
-                    type: 'p_label_availability',
-                    input: value
-                };
-                fetch('{{ url_for('editing_autocomplete') }}', {
-                    method: 'POST',
-                    credentials: 'include',
-                    body: JSON.stringify(packet),
-                    cache: 'no-cache',
-                    headers: new Headers({
-                        'content-type': 'application/json'
-                    })
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        response.json().then(function (status) {
-                            if (status) {
-                                $(input).removeClass('is-invalid');
-                                $(input).addClass('is-valid')
-                            } else {
-                                $(input).removeClass('is-valid');
-                                $(input).addClass('is-invalid')
-                            }
-                        })
-                    }
-                });
-            }
-        }
-
-        function checkTemplateAvailability(input, value) {
-            if (value.length > 1) {
-                var packet = {
-                    type: 'template_availability',
-                    input: value,
-                    templ_id: {{ templ_id }}
-                };
-                fetch('{{ url_for('editing_autocomplete') }}', {
-                    method: 'POST',
-                    credentials: 'include',
-                    body: JSON.stringify(packet),
-                    cache: 'no-cache',
-                    headers: new Headers({
-                        'content-type': 'application/json'
-                    })
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        response.json().then(function (status) {
-                            if (status) {
-                                $(input).removeClass('is-invalid');
-                                $(input).addClass('is-valid')
-                            } else {
-                                $(input).removeClass('is-valid');
-                                $(input).addClass('is-invalid')
-                            }
-                        })
-                    }
-                });
-            }
-        }
 
         $('#template').submit(function(event) {
             if ($('.is-invalid').length) {
@@ -1079,5 +1084,255 @@
                 $('.is-invalid').focus();
             }
         });
+
+        function addFromTemplate(id) {
+            var packet = {
+                    type: 'template_id',
+                    input: id
+                };
+                fetch('{{ url_for('editing_autocomplete') }}', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: JSON.stringify(packet),
+                    cache: 'no-cache',
+                    headers: new Headers({
+                        'content-type': 'application/json'
+                    })
+                })
+                .then(function (response) {
+                    if (response.status == 200) {
+                        response.json().then(function (items) {
+                            for (let p of items['participants']) {
+                                if ($('#participants').find('> div').length > 0) {
+                                        var current_num = $('#participants').find('> div').length + 1;
+                                    } else {
+                                        var current_num = 1
+                                    };
+                                    $('#participants').append(
+                                        `<div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="participant_${current_num}">
+                                            <div class="col-auto row align-items-center justify-content-center g-2">
+                                                <div class="col-auto">
+                                                    <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_${current_num})">
+                                                        Удалить
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="label_${current_num}"
+                                                           name="label_${current_num}"
+                                                           placeholder="Введите текст"
+                                                           value="${p['label']}"
+                                                    >
+                                                    <label for="label_${current_num}">Ярлык</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="sr_${current_num}"
+                                                           name="sr_${current_num}"
+                                                           placeholder="Введите текст"
+                                                           list="sr_list"
+                                                           value="${p['sr']}"
+                                                           oninput="suggestions('sr', sr_${current_num}.value)"
+                                                    >
+                                                    <label for="sr_${current_num}">Семантическая роль</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="col-12 align-items-center text-center mb-1">
+                                                    <a class="text-primary h5"
+                                                       href="javascript:;"
+                                                       role="button"
+                                                       data-bs-toggle="dropdown"
+                                                       data-bs-auto-close="outside"
+                                                       aria-expanded="false"
+                                                       style="text-decoration-line: none; font-variant: small-caps"
+                                                    >
+                                                        <span>Таксономия</span>
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                                        {% for tax in Taxonomy.query.all() %}
+                                                            <li>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input"
+                                                                           type="checkbox"
+                                                                           value="{{ tax.tax_id }}"
+                                                                           id="tax_${current_num}_{{ tax.tax_id }}"
+                                                                           name="tax_${current_num}_{{ tax.tax_id }}"
+                                                                    >
+                                                                    <label class="form-check-label"
+                                                                           for="tax_${current_num}_{{ tax.tax_id }}"
+                                                                           style="font-variant: small-caps"
+                                                                    >
+                                                                        {{ tax.tax }}
+                                                                    </label>
+                                                                </div>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="new_tax_${current_num}"
+                                                           name="new_tax_${current_num}"
+                                                           placeholder="Введите текст"
+                                                    >
+                                                    <label for="new_tax_${current_num}">Введите новые тэги через запятую</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="col-12 align-items-center text-center mb-1">
+                                                    <a class="text-primary h5"
+                                                       href="javascript:;"
+                                                       role="button"
+                                                       data-bs-toggle="dropdown"
+                                                       data-bs-auto-close="outside"
+                                                       aria-expanded="false"
+                                                       style="text-decoration-line: none; font-variant: small-caps"
+                                                    >
+                                                        <span>Топология</span>
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                                        {% for top in Topology.query.all() %}
+                                                            <li>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input"
+                                                                           type="checkbox"
+                                                                           value="{{ top.top_id }}"
+                                                                           id="top_${current_num}_{{ top.top_id }}"
+                                                                           name="top_${current_num}_{{ top.top_id }}"
+                                                                    >
+                                                                    <label class="form-check-label"
+                                                                           for="top_${current_num}_{{ top.top_id }}"
+                                                                           style="font-variant: small-caps"
+                                                                    >
+                                                                        {{ top.top }}
+                                                                    </label>
+                                                                </div>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="new_top_${current_num}"
+                                                           name="new_top_${current_num}"
+                                                           placeholder="Введите текст"
+                                                    >
+                                                    <label for="new_top_${current_num}">Введите новые тэги через запятую</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="other_${current_num}"
+                                                           name="other_${current_num}"
+                                                           placeholder="Введите текст"
+                                                           value="${p['other']}"
+                                                    >
+                                                    <label for="other_${current_num}">Другое</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating">
+                                                    <select class="form-select" id="status_${current_num}" name="status_${current_num}">
+                                                        <option selected value="1">ядерный</option>
+                                                        <option value="2">периферийный</option>
+                                                    </select>
+                                                    <label for="status_${current_num}">Этот участник</label>
+                                                </div>
+                                            </div>
+                                            <div class="col mb-2">
+                                                <div>
+                                                    <label for="is_child_${current_num}" class="form-label">Родительский участник</label>
+                                                    <select class="form-select" size="4" id="is_child_${current_num}" name="is_child_${current_num}" multiple>
+                                                        <option value="">отсутствует</option>
+                                                        {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                                                            <option value="{{ p.participant_id }}">
+                                                                {{ p.participant }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>`);
+                                        $(`#status_${current_num} option[value="${p['status']}"`).prop('selected', true);
+                                        for (let i of p['tax']) {
+                                            $(`#tax_${current_num}_${i}`).prop('checked', true);
+                                        };
+                                        for (let i of p['top']) {
+                                            $(`#top_${current_num}_${i}`).prop('checked', true);
+                                        };
+                                        for (let i of p['parents']) {
+                                            $(`#is_child_${current_num} option[value="${i}"`).prop('selected', true);
+                                        };
+                                        $(`#is_child_${current_num} option[value="${p['id']}"`).prop('selected', true);
+                                    };
+                                $('#example').val(items['example']);
+                                for (let ese in items['ese']) {
+                                    if (ese == 'Implication') {
+                                        var type = 'Impl';
+                                    } else {
+                                        var type = Array.from(ese)[0];
+                                    };
+                                    for (let e of items['ese'][ese]) {
+                                        if ($(`#${ese}`).find('> div').length > 0) {
+                                            var current_num = $(`#${ese}`).find('> div').length + 1;
+                                        } else {
+                                            var current_num = 1
+                                        };
+                                        $(`#${ese}`).append(
+                                        `
+                                        <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+                                            <div class="col-3 col-xl-2 g-2 mt-0 row align-items-center justify-content-center">
+                                                <div class="col-auto">
+                                                    <input class="form-control form-control-sm"
+                                                           type="number" required
+                                                           value="${e.slice(-1)[0]}"
+                                                           id="rank_${type}_${current_num}"
+                                                           name="rank_${type}_${current_num}"
+                                                           >
+                                                </div>
+                                                <div class="col-auto">
+                                                    <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}" name="status_ese_${type}_${current_num}">
+                                                        <option value="1">ассерция</option>
+                                                        <option value="2">пресуппозиция</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-9 col-xl-2">
+                                                <div class="form-floating">
+                                                    <select class="form-select" id="is_child_${type}_${current_num}" name="is_child_${type}_${current_num}">
+                                                        <option value="">нет</option>
+                                                        {% for t in Templates.query.all() %}
+                                                            <option value="{{t.templ_id}}">{{t.templ}}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <label for="is_child_${type}_${current_num}">Родительский шаблон</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-xl-8">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="${type}_${current_num}"
+                                                           name="${type}_${current_num}"
+                                                           placeholder="Введите текст"
+                                                           list="${type}_list"
+                                                           oninput="suggestions('${type}', ${type}_${current_num}.value)"
+                                                           value="${e[0]}"
+                                                    >
+                                                    <label for="${type}_${current_num}">Введите описание</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        `
+                                        );
+                                        $(`#is_child_${type}_${current_num} option[value="${e[1]}"]`).prop('selected', true);
+                                    }
+
+                                };
+                            })
+                    };
+                });
+            $('#meaning').append(`<input class="d-none" type="number" name="based_on" value="${$('#based_on').val()}">`);
+            $("#based_on").prop('disabled', true)
+        }
     </script>
 {% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% block title %}
+    Добавление лексемы
+{% endblock %}
+{% block content %}
+    <div class="container mb-2">
+        <div class="container row mb-2 g-2 align-items-center justify-content-end">
+            <div class="col-auto">
+                <button class="btn btn-sm btn-success" type="submit" form="lexeme" id="submit_button">
+                    Сохранить
+                </button>
+            </div>
+        </div>
+        <form name="lexeme" id="lexeme" method="post">
+            <div class="row row-cols-1 row-cols-lg-2 align-items-center justify-content-between g-2 mb-2">
+                <div class="col">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="language"
+                               name="language"
+                               placeholder="Введите название языка"
+                               list="languages"
+                               value="{{ Languages.query.get(Lexemes.query.get(lex_id).lang_id).lang }}"
+                               required
+                        >
+                        <label for="language">Язык</label>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating">
+                        <select class="form-select" id="pos" name="pos" required>
+                            <option value="">не выбрана</option>
+                            {% for p in Parts_of_speech.query.all() %}
+                                <option value="{{ p.pos_id }}" {% if p.pos_id == Lexemes.query.get(lex_id).pos_id %}selected{% endif %}>
+                                    {{ p.full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <label for="pos">Часть речи</label>
+                    </div>
+                </div>
+            </div>
+            <div class="container row g-2 mb-2 align-items-center justify-content-start">
+                <div class="col-auto">
+                    <span class="form-label h5">Формы</span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="addForm()" type="button" id="add_form_button">
+                        <span class="text-center">Добавить форму</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-auto row g-2 p-1 mb-2" style="max-height: 60vh;" id="forms">
+                {% for f in Forms.query.filter_by(lex_id=lex_id, type=1).all() %}
+                    <div class="col-12 row align-items-center justify-content-center g-2" id="existent_form_{{ f.form_id }}">
+                        <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteForm(existent_form_{{ f.form_id }})">
+                                    Удалить
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-5">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="existent_main_form_{{ f.form_id }}"
+                                       name="existent_main_form_{{ f.form_id }}"
+                                       placeholder="Введите текст"
+                                       value="{{ f.form }}"
+                                       required
+                                >
+                                <label for="existent_main_form_{{ f.form_id }}">Основной вид</label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-5">
+                           <div class="form-floating">
+                                <input type="text" class="form-control" id="existent_script_form_{{ f.form_id }}"
+                                       name="existent_script_form_{{ f.form_id }}"
+                                       placeholder="Введите текст"
+                                       dir="auto"
+                                       value="{{ Forms.query.filter_by(parent_id=f.form_id, type=2).first().form }}"
+                                       >
+                                <label for="existent_script_form_{{ f.form_id }}">В графике</label>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="container row g-2 mb-2 align-items-center justify-content-start">
+                <div class="col-auto">
+                    <span class="form-label h5">Значения</span>
+                </div>
+                <div class="col-auto">
+                    <a class="btn btn-sm btn-warning" type="button" form="lexeme" href="{{ url_for('new_meaning', lex_id=lex_id) }}" target="_parent">
+                        Добавить значение
+                    </a>
+                </div>
+                <div class="col-12">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Участники</th>
+                                    <th scope="col">Структура события</th>
+                                    <th scope="col">Пример</th>
+                                    <th scope="col">Управление</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in Meanings.query.filter_by(lex_id=lex_id).all() %}
+                                    <tr>
+                                        <td><a class="link-primary" target="_blank" href="{{ url_for('edit_meaning', m_id=m.m_id) }}">{{ m.m_id }}</a></td>
+                                        <td>
+                                            {% for p in Participant_relations.query.filter_by(target_id=m.m_id, type=4).all() %}
+                                                <span>{{ Participants.query.get(p.participant_id).participant }}</span><br>
+                                            {% endfor %}
+                                        </td>
+                                        <td>что-то про структуру события</td>
+                                        <td>{{ Amend.md(Examples.query.get(m.example_id).example) }}</td>
+                                        <td>{{ Amend.md(m.government) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+    <datalist id="languages">
+        {% for l in Languages.query.all() %}
+            <option value="{{ l.lang }}">
+        {% endfor %}
+    </datalist>
+    <script type='text/javascript'>
+        function addForm() {
+            if ($(`#forms`).find('> div').length > 0) {
+                var current_num = $(`#forms`).find('> div').length + 1;
+            } else {
+                var current_num = 1
+            }
+            $(`#forms`).append(
+            `
+            <div class="col-12 row align-items-center justify-content-center g-2" id="form_${current_num}">
+                <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="form_${current_num}.remove()">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="main_form_${current_num}"
+                               name="main_form_${current_num}"
+                               placeholder="Введите текст"
+                               required
+                        >
+                        <label for="main_form_${current_num}">Основной вид</label>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                   <div class="form-floating">
+                        <input type="text" class="form-control" id="script_form_${current_num}"
+                               name="script_form_${current_num}"
+                               placeholder="Введите текст"
+                               dir="auto"
+                        >
+                        <label for="script_form_${current_num}">В графике</label>
+                    </div>
+                </div>
+            </div>`);
+            for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
+            autosize(document.getElementsByTagName('textarea')[i]);
+            }
+        }
+        $('#lexeme').submit(function(event) {
+            if (!$('#forms').length) {
+                alert('Добавьте хотя бы одну форму.')
+                event.preventDefault();
+                $('#add_form_button').focus();
+            }
+        });
+        function deleteForm(form) {
+            if (form.id.includes('existent')) {
+                var form_id = form.id.split('_').slice(-1);
+                $('#lexeme').append(
+                    `<input class="d-none" type="text" name="delete_form_${form_id}" value="${form_id}">`
+                )
+            };
+            form.remove()
+        }
+    </script>
+{% endblock %}

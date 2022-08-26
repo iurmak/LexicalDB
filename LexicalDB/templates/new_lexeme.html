@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}
+    Добавление лексемы
+{% endblock %}
+{% block content %}
+    <div class="container mb-2">
+        <div class="container row mb-2 g-2 align-items-center justify-content-start">
+            <div class="text-end mb-2">
+                <button class="btn btn-sm btn-success" type="submit" form="lexeme" id="submit_button">
+                    Добавить лексему
+                </button>
+            </div>
+        </div>
+        <form name="lexeme" id="lexeme" method="post">
+            <div class="row row-cols-1 row-cols-lg-2 align-items-center justify-content-between g-2 mb-2">
+                <div class="col">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="language"
+                               name="language"
+                               placeholder="Введите название языка"
+                               list="languages"
+                               required
+                        >
+                        <label for="language">Язык</label>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating">
+                        <select class="form-select" id="pos" name="pos" required>
+                            <option value="">не выбрана</option>
+                            {% for p in Parts_of_speech.query.all() %}
+                                <option value="{{ p.pos_id }}">
+                                    {{ p.full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <label for="pos">Часть речи</label>
+                    </div>
+                </div>
+            </div>
+            <div class="container row g-2 mb-2 align-items-center justify-content-start">
+                <div class="col-auto">
+                    <span class="form-label h5">Формы</span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="addForm()" type="button" id="add_form_button">
+                        <span class="text-center">Добавить форму</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-auto row g-2 p-1 mb-2" style="max-height: 60vh;" id="forms">
+            </div>
+        </form>
+    </div>
+    <datalist id="languages">
+        {% for l in Languages.query.all() %}
+            <option value="{{ l.lang }}">
+        {% endfor %}
+    </datalist>
+    <script type='text/javascript'>
+        function addForm() {
+            if ($(`#forms`).find('> div').length > 0) {
+                var current_num = $(`#forms`).find('> div').length + 1;
+            } else {
+                var current_num = 1
+            }
+            $(`#forms`).append(
+            `
+            <div class="col-12 row align-items-center justify-content-center g-2" id="form_${current_num}">
+                <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="form_${current_num}.remove()">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="main_form_${current_num}"
+                               name="main_form_${current_num}"
+                               placeholder="Введите текст"
+                               required
+                        >
+                        <label for="main_form_${current_num}">Основной вид</label>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                   <div class="form-floating">
+                        <input type="text" class="form-control" id="script_form_${current_num}"
+                               name="script_form_${current_num}"
+                               placeholder="Введите текст"
+                               dir="auto"
+                        >
+                        <label for="script_form_${current_num}">В графике</label>
+                    </div>
+                </div>
+            </div>`);
+            for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
+            autosize(document.getElementsByTagName('textarea')[i]);
+            }
+        }
+        $('#lexeme').submit(function(event) {
+            if (!$('#forms').length) {
+                alert('Добавьте хотя бы одну форму.')
+                event.preventDefault();
+                $('#add_form_button').focus();
+            }
+        });
+    </script>
+{% endblock %}

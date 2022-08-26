@@ -21,7 +21,7 @@ app.config['MAIL_USERNAME'] = 'pamir.languages@gmail.com'
 app.config['MAIL_DEFAULT_SENDER'] = 'pamir.languages@gmail.com'
 app.config['MAIL_PASSWORD'] = 'mufhumrmyfhkzfoy'
 """
-import LexicalDB.profile, LexicalDB.login, LexicalDB.about, LexicalDB.templates
+import LexicalDB.profile, LexicalDB.login, LexicalDB.about, LexicalDB.templates, LexicalDB.lexemes_and_forms
 
 if __name__ == "__main__":
     app.run(debug=True)

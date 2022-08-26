@@ -41,7 +41,7 @@ class Topology(db.Model):
 
 class Participants(db.Model):
     participant_id = db.Column(db.Integer, primary_key=True)
-    participant = db.Column(db.Text, unique=True)
+    participant = db.Column(db.Text, unique=False)
     sr_id = db.Column(db.Integer, db.ForeignKey(Semantic_roles.sr_id))
     other = db.Column(db.Text, unique=True)
     status = db.Column(db.Integer) #1 -- core, 2 -- peripheral
@@ -49,7 +49,7 @@ class Participants(db.Model):
 class Participant_relations(db.Model):
     participant_id = db.Column(db.Integer, db.ForeignKey(Participants.participant_id))
     target_id = db.Column(db.Integer, unique=False, primary_key=True)
-    type = db.Column(db.Integer, unique=False) #1 -- taxonomy, 2 -- topology, 3 -- parent-child
+    type = db.Column(db.Integer, unique=False) #1 -- taxonomy, 2 -- topology, 3 -- parent-child, 4 -- participant-meaning
 
 class Templates(db.Model):
     templ_id = db.Column(db.Integer, primary_key=True)
@@ -60,18 +60,19 @@ class Templates(db.Model):
 class Template_relations(db.Model):
     templ_id = db.Column(db.Integer, db.ForeignKey(Templates.templ_id))
     target_id = db.Column(db.Integer, unique=False, primary_key=True)
-    type = db.Column(db.Integer, unique=False) #1 -- parent-child, 2 -- ese, 9 -- template-participant
+    type = db.Column(db.Integer, unique=False) #1 -- parent-child, 2 -- ese, 3 -- example, 4 -- template-meaning, 9 -- template-participant
 
 class Event_structure(db.Model):
     ese_id = db.Column(db.Integer, nullable=False, primary_key=True)
     ese = db.Column(db.Text, unique=False, nullable=False)
     type = db.Column(db.Integer, unique=False, nullable=False) #1 -- Initial States, 2 -- beginning, 3 -- Process, 4 -- Final stage, 5 -- Result, 6 -- Implications
     rank = db.Column(db.Integer, unique=False, nullable=False)
+    status = db.Column(db.Integer, unique=False, nullable=True) #1 -- assertion, 2 -- presupposition
 
 class Event_structure_relations(db.Model):
-    element_id = db.Column(db.Integer, nullable=False)
+    ese_id = db.Column(db.Integer, nullable=False)
     target_id = db.Column(db.Integer, unique=False, primary_key=True)
-    type = db.Column(db.Integer, unique=False, nullable=False) #1 -- belonging to a template
+    type = db.Column(db.Integer, unique=False, nullable=False) #1 -- belonging to a template, 2 -- belonging to a meaning
 
 class Parts_of_speech(db.Model):
     pos_id = db.Column(db.Integer, primary_key=True)
@@ -86,10 +87,22 @@ class Languages(db.Model):
 class Lexemes(db.Model):
     lex_id = db.Column(db.Integer, primary_key=True)
     lang_id = db.Column(db.Integer, db.ForeignKey(Languages.lang_id))
-    pos_is = db.Column(db.Integer, db.ForeignKey(Parts_of_speech.pos_id))
+    pos_id = db.Column(db.Integer, db.ForeignKey(Parts_of_speech.pos_id))
+
+class Lexeme_relations(db.Model):
+    lex_id = db.Column(db.Integer, nullable=False)
+    target_id = db.Column(db.Integer, unique=False, primary_key=True)
+    type = db.Column(db.Integer, unique=False, nullable=False) #1 -- meaning, 2 -- antonym, 3 -- synonym
 
 class Forms(db.Model):
     form_id = db.Column(db.Integer, primary_key=True)
     lex_id = db.Column(db.Integer, db.ForeignKey(Lexemes.lex_id))
-    type = db.Column(db.Integer, nullable=False)
+    type = db.Column(db.Integer, nullable=False) #1 -- form, 2 -- script form
     form = db.Column(db.Text, nullable=False)
+    parent_id = db.Column(db.Integer, nullable=True)
+
+class Meanings(db.Model):
+    m_id = db.Column(db.Integer, primary_key=True)
+    lex_id = db.Column(db.Integer, db.ForeignKey(Lexemes.lex_id))
+    example_id = db.Column(db.Integer, db.ForeignKey(Examples.example_id))
+    government = db.Column(db.Text, nullable=True, unique=False)

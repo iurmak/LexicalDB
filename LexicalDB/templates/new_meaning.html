@@ -1,46 +1,37 @@
 {% extends 'base.html' %}
 {% block title %}
-    Добавление шаблона
+    Добавление значения
 {% endblock %}
 {% block content %}
     <div class="container mb-2">
         <div class="container row mb-2 g-2 align-items-center justify-content-start">
             <div class="col-12 col-lg-9 row g-2">
                 <div class="col-12">
-                    <div>
-                        <label for="based_on" class="form-label">
-                            Родительский шаблон
-                        </label>
-                        <select form="template" class="form-select" size="3" id="based_on" name="based_on" multiple>
+                    <div class="form-floating">
+                        <select form="meaning" class="form-select" id="based_on" name="based_on" onchange="addFromTemplate(this.value)" required>
                             <option value="">отсутствует</option>
                             {% for t in Templates.query.all() %}
                                 <option value="{{ t.templ_id }}">{{ t.templ }}</option>
                             {% endfor %}
                         </select>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="form-floating">
-                        <input type="text" class="form-control" id="template_name"
-                               name="template_name"
-                               placeholder="Введите текст"
-                               form="template"
-                               oninput="checkTemplateAvailability(this, this.value)"
-                               required
-                        >
-                        <label for="template_name">Введите название шаблона</label>
+                        <label for="based_on">
+                            Родительский шаблон
+                        </label>
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-lg-3">
-                <div class="text-center mb-2">
-                    <button class="btn btn-sm btn-success" type="submit" form="template" id="submit_button">
-                        Добавить шаблон
+            <div class="col-12 col-lg-3 row align-items-center justify-content-center g-2">
+                <div class="col-12 text-center">
+                    Лексема: <a href="{{ url_for('edit_lexeme', lex_id=lex_id) }}" target="_blank"><b>{{ Forms.query.filter_by(lex_id=lex_id).first().form }} (ID {{ lex_id }})</b></a>
+                </div>
+                <div class="col-12 text-center mb-2">
+                    <button class="btn btn-sm btn-success" type="submit" form="meaning">
+                        Добавить значение
                     </button>
                 </div>
             </div>
         </div>
-        <form name="template" id="template" method="post">
+        <form name="meaning" id="meaning" method="post">
             <div class="container row g-2 mb-2 align-items-center justify-content-start">
                 <div class="col-auto">
                     <span class="form-label h5">Участники</span>
@@ -75,150 +66,6 @@
             </div>
             <div class="collapse show container overflow-auto" style="max-height: 60vh;" id="collapse_participants">
                 <div class="row row-cols-1 row-cols-lg-3 g-2" id="participants">
-                    <div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="participant_1">
-                        <div class="col-auto row align-items-center justify-content-center g-2">
-                            <div class="col-auto">
-                                <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_1)">
-                                    Удалить
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="label_1"
-                                       name="label_1"
-                                       placeholder="Введите текст"
-                                       oninput="checkLabelAvailability(this, this.value)"
-                                       required
-                                >
-                                <label for="label_1">Ярлык</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="sr_1"
-                                       name="sr_1"
-                                       placeholder="Введите текст"
-                                       list="sr_list"
-                                       oninput="suggestions('sr', sr_1.value)"
-                                >
-                                <label for="sr_1">Семантическая роль</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="col-12 align-items-center text-center mb-1">
-                                <a class="text-primary h5"
-                                   href="javascript:;"
-                                   role="button"
-                                   data-bs-toggle="dropdown"
-                                   data-bs-auto-close="outside"
-                                   aria-expanded="false"
-                                   style="text-decoration-line: none; font-variant: small-caps"
-                                >
-                                    <span>Таксономия</span>
-                                </a>
-                                <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                    {% for tax in Taxonomy.query.all() %}
-                                        <li>
-                                            <div class="form-check">
-                                                <input class="form-check-input"
-                                                       type="checkbox"
-                                                       value="{{ tax.tax_id }}"
-                                                       id="tax_1_{{ tax.tax_id }}"
-                                                       name="tax_1_{{ tax.tax_id }}"
-                                                >
-                                                <label class="form-check-label"
-                                                       for="tax_1_{{ tax.tax_id }}"
-                                                       style="font-variant: small-caps"
-                                                >
-                                                    {{ tax.tax }}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="new_tax_1"
-                                       name="new_tax_1"
-                                       placeholder="Введите текст"
-                                >
-                                <label for="new_tax_1">Введите новые тэги через запятую</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="col-12 align-items-center text-center mb-1">
-                                <a class="text-primary h5"
-                                   href="javascript:;"
-                                   role="button"
-                                   data-bs-toggle="dropdown"
-                                   data-bs-auto-close="outside"
-                                   aria-expanded="false"
-                                   style="text-decoration-line: none; font-variant: small-caps"
-                                >
-                                    <span>Топология</span>
-                                </a>
-                                <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                    {% for top in Topology.query.all() %}
-                                        <li>
-                                            <div class="form-check">
-                                                <input class="form-check-input"
-                                                       type="checkbox"
-                                                       value="{{ top.top_id }}"
-                                                       id="top_1_{{ top.top_id }}"
-                                                       name="top_1_{{ top.top_id }}"
-                                                >
-                                                <label class="form-check-label"
-                                                       for="top_1_{{ top.top_id }}"
-                                                       style="font-variant: small-caps"
-                                                >
-                                                    {{ top.top }}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="new_top_1"
-                                       name="new_top_1"
-                                       placeholder="Введите текст"
-                                >
-                                <label for="new_top_1">Введите новые тэги через запятую</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="other_1"
-                                       name="other_1"
-                                       placeholder="Введите текст"
-                                >
-                                <label for="other_1">Другое</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <select class="form-select" id="status_1" name="status_1">
-                                    <option selected value="1">ядерный</option>
-                                    <option value="2">периферийный</option>
-                                </select>
-                                <label for="status_1">Этот участник</label>
-                            </div>
-                        </div>
-                        <div class="col mb-2">
-                            <div>
-                                <label for="is_child_1" class="form-label">Родительский участник</label>
-                                <select class="form-select" size="4" id="is_child_1" name="is_child_1" multiple>
-                                    <option value="">отсутствует</option>
-                                    {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
-                                        <option value="{{ p.participant_id }}">
-                                            {{ p.participant }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
             <div class="container my-2">
@@ -226,6 +73,13 @@
                           id="example"
                           name="example"
                           placeholder="Введите текст примера"
+                          style="max-height: 300px"></textarea>
+            </div>
+            <div class="container mb-2">
+                <textarea class="form-control overflow-auto"
+                          id="government"
+                          name="government"
+                          placeholder="Введите формулу управления"
                           style="max-height: 300px"></textarea>
             </div>
             <div class="container mb-2">
@@ -309,6 +163,16 @@
                     </div>
                 </div>
             </div>
+            <div class="container mb-2">
+                <div class="row g-2 mb-2 align-items-center justify-content-start">
+                    <div class="col-auto">
+                        <span class="form-label h5">Связанные единицы</span>
+                    </div>
+                </div>
+                <div class="container mb-2">
+                    ???
+                </div>
+            </div>
         </form>
         <datalist id="sr_list"></datalist>
         <datalist id="I_list"></datalist>
@@ -343,7 +207,6 @@
                             <input type="text" class="form-control" id="label_${current_num}"
                                    name="label_${current_num}"
                                    placeholder="Введите текст"
-                                   oninput="checkLabelAvailability(this, this.value)"
                                    required
                             >
                             <label for="label_${current_num}">Ярлык</label>
@@ -519,7 +382,6 @@
                                         <input type="text" class="form-control" id="label_${current_num}"
                                                name="label_${current_num}"
                                                placeholder="Введите текст"
-                                               oninput="checkLabelAvailability(this, this.value)"
                                                required
                                         >
                                         <label for="label_${current_num}">Ярлык</label>
@@ -685,18 +547,26 @@
             $(`#${id}`).append(
             `
             <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
-                <div class="col-3 col-xl-1 text-center">
-                    <input class="form-control"
-                           type="number" required
-                           value="${current_num}"
-                           id="rank_${type}_${current_num}"
-                           name="rank_${type}_${current_num}"
-                           >
+                <div class="col-3 col-xl-2 g-2 mt-0 row align-items-center justify-content-center">
+                    <div class="col-auto">
+                        <input class="form-control form-control-sm"
+                               type="number" required
+                               value="${current_num}"
+                               id="rank_${type}_${current_num}"
+                               name="rank_${type}_${current_num}"
+                               >
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}}" name="status_ese_${type}_${current_num}">
+                            <option value="1">ассерция</option>
+                            <option value="2">пресуппозиция</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="col-9 col-xl-3">
+                <div class="col-9 col-xl-2">
                     <div class="form-floating">
                         <select class="form-select" id="is_child_${type}_${current_num}}" name="is_child_${type}_${current_num}">
-                            <option value="">текущий</option>
+                            <option value="">нет</option>
                             {% for t in Templates.query.all() %}
                                 <option value="{{t.templ_id}}">{{t.templ}}</option>
                             {% endfor %}
@@ -725,63 +595,6 @@
 
         function deleteParticipant(participant) {
             participant.remove()
-        }
-
-        function disableCheckBox(pos, grammar) {
-            var gr_id = $(grammar).attr('id');
-            if (pos.value == '2' || pos.value == '4') {
-                for (let i = 34; i < 36; i++) {
-                    $(`#${gr_id} option[value=${i}]`).prop("disabled", false)
-                }
-                for (let i = 36; i < 42; i++) {
-                    $(`#${gr_id} option[value=${i}]`).prop("disabled", true)
-                }
-            } else if (pos.value == '1') {
-                for (let i = 36; i < 42; i++) {
-                    $(`#${gr_id} option[value=${i}]`).prop("disabled", false)
-                }
-                for (let i = 34; i < 36; i++) {
-                    $(`#${gr_id} option[value=${i}]`).prop("disabled", true)
-                }
-            } else if (pos.value == '3') {
-                for (let i = 59; i < 60; i++) {
-                    $(`#${gr_id} option[value=${i}]`).prop("disabled", false)
-                }
-                for (let i = 34; i < 59; i++) {
-                    $(`#${gr_id} option[value=${i}]`).prop("disabled", true)
-                }
-            } else {
-                for (let i = 34; i < 42; i++) {
-                    $(`#${gr_id} option[value=${i}]`).prop("disabled", true)
-                }
-                grammar.selectedIndex = 0;
-            }
-        }
-        var exampleEl = document.getElementById('delete_lex')
-
-        function addLabels(aim, dropdown, type) {
-            if ($(`#${dropdown}`).is(':checked')) {
-                const re_ns = RegExp('\n', 'g');
-                const re_spaces = RegExp(' +$', 'gm');
-                var current_text = $(`#${aim}`).text().replaceAll(re_ns, '').replace(re_spaces, '');
-                if (current_text.match('Пометы')) {
-                    var selected = [$(`#${dropdown}`).attr('full_name')];
-                } else {
-                    var selected = [current_text, $(`#${dropdown}`).attr('full_name')];
-                }
-                $(`#${aim}`).text(selected.join(', '));
-            } else {
-                var label = $(`#${dropdown}`).attr('full_name');
-                const re = RegExp(`(, )*${label}`.replace('\.', '\\\.'), 'g');
-                const re_spaces = RegExp('[ \n]+$', 'gm');
-                const re_beginning = RegExp('^[ \n]*, ', 'gm');
-                var new_text = $(`#${aim}`).text().replace(re, '').replace(re_spaces, '');
-                if (new_text == '') {
-                    new_text = 'Пометы'
-                }
-                new_text = new_text.replace(re_beginning, '')
-                $(`#${aim}`).text(new_text)
-            }
         }
 
         function suggestions(type, input) {
@@ -813,36 +626,7 @@
                 });
             }
         }
-        function checkLabelAvailability(input, value) {
-            if (value.length > 1) {
-                var packet = {
-                    type: 'p_label_availability',
-                    input: value
-                };
-                fetch('{{ url_for('editing_autocomplete') }}', {
-                    method: 'POST',
-                    credentials: 'include',
-                    body: JSON.stringify(packet),
-                    cache: 'no-cache',
-                    headers: new Headers({
-                        'content-type': 'application/json'
-                    })
-                })
-                .then(function (response) {
-                    if (response.status == 200) {
-                        response.json().then(function (status) {
-                            if (status) {
-                                $(input).removeClass('is-invalid');
-                                $(input).addClass('is-valid')
-                            } else {
-                                $(input).removeClass('is-valid');
-                                $(input).addClass('is-invalid')
-                            }
-                        })
-                    }
-                });
-            }
-        }
+
         $('#template').submit(function(event) {
             if ($('.is-invalid').length) {
                 alert('Удостоверьтесь, что все ярлыки уникальны.')
@@ -850,11 +634,11 @@
                 $('.is-invalid').focus();
             }
         });
-        function checkTemplateAvailability(input, value) {
-            if (value.length > 1) {
-                var packet = {
-                    type: 'template_availability',
-                    input: value
+
+        function addFromTemplate(id) {
+            var packet = {
+                    type: 'template_id',
+                    input: id
                 };
                 fetch('{{ url_for('editing_autocomplete') }}', {
                     method: 'POST',
@@ -867,18 +651,238 @@
                 })
                 .then(function (response) {
                     if (response.status == 200) {
-                        response.json().then(function (status) {
-                            if (status) {
-                                $(input).removeClass('is-invalid');
-                                $(input).addClass('is-valid')
-                            } else {
-                                $(input).removeClass('is-valid');
-                                $(input).addClass('is-invalid')
-                            }
-                        })
-                    }
+                        response.json().then(function (items) {
+                            for (let p of items['participants']) {
+                                if ($('#participants').find('> div').length > 0) {
+                                        var current_num = $('#participants').find('> div').length + 1;
+                                    } else {
+                                        var current_num = 1
+                                    };
+                                    $('#participants').append(
+                                        `<div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="participant_${current_num}">
+                                            <div class="col-auto row align-items-center justify-content-center g-2">
+                                                <div class="col-auto">
+                                                    <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_${current_num})">
+                                                        Удалить
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="label_${current_num}"
+                                                           name="label_${current_num}"
+                                                           placeholder="Введите текст"
+                                                           value="${p['label']}"
+                                                    >
+                                                    <label for="label_${current_num}">Ярлык</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="sr_${current_num}"
+                                                           name="sr_${current_num}"
+                                                           placeholder="Введите текст"
+                                                           list="sr_list"
+                                                           value="${p['sr']}"
+                                                           oninput="suggestions('sr', sr_${current_num}.value)"
+                                                    >
+                                                    <label for="sr_${current_num}">Семантическая роль</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="col-12 align-items-center text-center mb-1">
+                                                    <a class="text-primary h5"
+                                                       href="javascript:;"
+                                                       role="button"
+                                                       data-bs-toggle="dropdown"
+                                                       data-bs-auto-close="outside"
+                                                       aria-expanded="false"
+                                                       style="text-decoration-line: none; font-variant: small-caps"
+                                                    >
+                                                        <span>Таксономия</span>
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                                        {% for tax in Taxonomy.query.all() %}
+                                                            <li>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input"
+                                                                           type="checkbox"
+                                                                           value="{{ tax.tax_id }}"
+                                                                           id="tax_${current_num}_{{ tax.tax_id }}"
+                                                                           name="tax_${current_num}_{{ tax.tax_id }}"
+                                                                    >
+                                                                    <label class="form-check-label"
+                                                                           for="tax_${current_num}_{{ tax.tax_id }}"
+                                                                           style="font-variant: small-caps"
+                                                                    >
+                                                                        {{ tax.tax }}
+                                                                    </label>
+                                                                </div>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="new_tax_${current_num}"
+                                                           name="new_tax_${current_num}"
+                                                           placeholder="Введите текст"
+                                                    >
+                                                    <label for="new_tax_${current_num}">Введите новые тэги через запятую</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="col-12 align-items-center text-center mb-1">
+                                                    <a class="text-primary h5"
+                                                       href="javascript:;"
+                                                       role="button"
+                                                       data-bs-toggle="dropdown"
+                                                       data-bs-auto-close="outside"
+                                                       aria-expanded="false"
+                                                       style="text-decoration-line: none; font-variant: small-caps"
+                                                    >
+                                                        <span>Топология</span>
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                                        {% for top in Topology.query.all() %}
+                                                            <li>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input"
+                                                                           type="checkbox"
+                                                                           value="{{ top.top_id }}"
+                                                                           id="top_${current_num}_{{ top.top_id }}"
+                                                                           name="top_${current_num}_{{ top.top_id }}"
+                                                                    >
+                                                                    <label class="form-check-label"
+                                                                           for="top_${current_num}_{{ top.top_id }}"
+                                                                           style="font-variant: small-caps"
+                                                                    >
+                                                                        {{ top.top }}
+                                                                    </label>
+                                                                </div>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="new_top_${current_num}"
+                                                           name="new_top_${current_num}"
+                                                           placeholder="Введите текст"
+                                                    >
+                                                    <label for="new_top_${current_num}">Введите новые тэги через запятую</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="other_${current_num}"
+                                                           name="other_${current_num}"
+                                                           placeholder="Введите текст"
+                                                           value="${p['other']}"
+                                                    >
+                                                    <label for="other_${current_num}">Другое</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating">
+                                                    <select class="form-select" id="status_${current_num}" name="status_${current_num}">
+                                                        <option selected value="1">ядерный</option>
+                                                        <option value="2">периферийный</option>
+                                                    </select>
+                                                    <label for="status_${current_num}">Этот участник</label>
+                                                </div>
+                                            </div>
+                                            <div class="col mb-2">
+                                                <div>
+                                                    <label for="is_child_${current_num}" class="form-label">Родительский участник</label>
+                                                    <select class="form-select" size="4" id="is_child_${current_num}" name="is_child_${current_num}" multiple>
+                                                        <option value="">отсутствует</option>
+                                                        {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                                                            <option value="{{ p.participant_id }}">
+                                                                {{ p.participant }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>`);
+                                        $(`#status_${current_num} option[value="${p['status']}"`).prop('selected', true);
+                                        for (let i of p['tax']) {
+                                            $(`#tax_${current_num}_${i}`).prop('checked', true);
+                                        };
+                                        for (let i of p['top']) {
+                                            $(`#top_${current_num}_${i}`).prop('checked', true);
+                                        };
+                                        for (let i of p['parents']) {
+                                            $(`#is_child_${current_num} option[value="${i}"`).prop('selected', true);
+                                        };
+                                        $(`#is_child_${current_num} option[value="${p['id']}"`).prop('selected', true);
+                                    };
+                                $('#example').val(items['example']);
+                                for (let ese in items['ese']) {
+                                    if (ese == 'Implication') {
+                                        var type = 'Impl';
+                                    } else {
+                                        var type = Array.from(ese)[0];
+                                    };
+                                    for (let e of items['ese'][ese]) {
+                                        if ($(`#${ese}`).find('> div').length > 0) {
+                                            var current_num = $(`#${ese}`).find('> div').length + 1;
+                                        } else {
+                                            var current_num = 1
+                                        };
+                                        $(`#${ese}`).append(
+                                        `
+                                        <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+                                            <div class="col-3 col-xl-2 g-2 mt-0 row align-items-center justify-content-center">
+                                                <div class="col-auto">
+                                                    <input class="form-control form-control-sm"
+                                                           type="number" required
+                                                           value="${e.slice(-1)[0]}"
+                                                           id="rank_${type}_${current_num}"
+                                                           name="rank_${type}_${current_num}"
+                                                           >
+                                                </div>
+                                                <div class="col-auto">
+                                                    <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}" name="status_ese_${type}_${current_num}">
+                                                        <option value="1">ассерция</option>
+                                                        <option value="2">пресуппозиция</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-9 col-xl-2">
+                                                <div class="form-floating">
+                                                    <select class="form-select" id="is_child_${type}_${current_num}" name="is_child_${type}_${current_num}">
+                                                        <option value="">нет</option>
+                                                        {% for t in Templates.query.all() %}
+                                                            <option value="{{t.templ_id}}">{{t.templ}}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <label for="is_child_${type}_${current_num}">Родительский шаблон</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-xl-8">
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="${type}_${current_num}"
+                                                           name="${type}_${current_num}"
+                                                           placeholder="Введите текст"
+                                                           list="${type}_list"
+                                                           oninput="suggestions('${type}', ${type}_${current_num}.value)"
+                                                           value="${e[0]}"
+                                                    >
+                                                    <label for="${type}_${current_num}">Введите описание</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        `
+                                        );
+                                        $(`#is_child_${type}_${current_num} option[value="${e[1]}"]`).prop('selected', true);
+                                    }
+
+                                };
+                            })
+                    };
                 });
-            }
+            $('#meaning').append(`<input class="d-none" type="number" name="based_on" value="${$('#based_on').val()}">`);
+            $("#based_on").prop('disabled', true)
         }
     </script>
 {% endblock %}
