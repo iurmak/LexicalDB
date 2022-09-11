@@ -1,9 +1,9 @@
 from LexicalDB import app
 from flask import render_template, request, url_for, session, make_response, jsonify, redirect
 from LexicalDB.supplement import Emails, Amend, Check
-from LexicalDB.models import db, Users, Taxonomy, Topology, Semantic_roles, Participants, Participant_relations,\
+from LexicalDB.models import db, Users, Semantic_roles, Participants, Participant_relations,\
     Event_structure, Templates, Template_relations, Lexemes, Lexeme_relations, Forms, Parts_of_speech, Languages,\
-    Examples, Event_structure_relations, Meanings
+    Examples, Event_structure_relations, Meanings, Labels
 from itsdangerous import URLSafeSerializer
 from re import sub, compile
 from sqlalchemy import not_
@@ -208,9 +208,8 @@ def new_meaning(lex_id):
 
     if request.method == 'GET':
         return render_template("new_meaning.html",
-                               Taxonomy=Taxonomy,
+                               Labels=Labels,
                                Templates=Templates,
-                               Topology=Topology,
                                Semantic_roles=Semantic_roles,
                                Participants=Participants,
                                Event_structure=Event_structure,
@@ -225,7 +224,10 @@ def new_meaning(lex_id):
     elif request.method == 'POST':
         no_spaces_at_edges = compile(r'( +$|^ +)')
         example = Examples(
-            example=no_spaces_at_edges.sub('', request.form.get('example'))
+            example=no_spaces_at_edges.sub('', request.form.get('example', '')),
+            original_script=no_spaces_at_edges.sub('', request.form.get('original_script', '')),
+            translation=no_spaces_at_edges.sub('', request.form.get('translation', '')),
+            source=no_spaces_at_edges.sub('', request.form.get('source', '')),
         )
         db.session.add(example)
         db.session.commit()
@@ -402,10 +404,9 @@ def edit_meaning(m_id):
     if request.method == 'GET':
         return render_template("edit_meaning.html",
                                m=Meanings.query.get(m_id),
-                               Taxonomy=Taxonomy,
+                               Labels=Labels,
                                Templates=Templates,
                                Template_relations=Template_relations,
-                               Topology=Topology,
                                Semantic_roles=Semantic_roles,
                                Participants=Participants,
                                Participant_relations=Participant_relations,
@@ -420,19 +421,24 @@ def edit_meaning(m_id):
 
     elif request.method == 'POST':
         no_spaces_at_edges = compile(r'( +$|^ +)')
-        Templates.query.filter_by(templ_id=templ_id).update(
-            {'templ': request.form.get('template_name')}
+        m = Meanings.query.get(m_id)
+        if request.form.get('based_on'):
+            based_on = int(request.form.get('based_on'))
+        else:
+            based_on = None
+        Examples.query.filter_by(example_id=m.example_id).update(
+            {'example': no_spaces_at_edges.sub('', request.form.get('example', '')),
+             'original_script': no_spaces_at_edges.sub('', request.form.get('original_script', '')),
+             'translation': no_spaces_at_edges.sub('', request.form.get('translation', '')),
+             'source': no_spaces_at_edges.sub('', request.form.get('source', ''))}
         )
-        Template_relations.query.filter_by(target_id=templ_id, type=1).delete()
-        if request.form.to_dict(flat=False).get('based_on'):
-            for base in request.form.to_dict(flat=False).get('based_on'):
-                db.session.add(
-                    Template_relations(
-                        templ_id=base,
-                        target_id=templ_id,
-                        type=1
-                    )
-                )
+        Meanings.query.filter_by(m_id=m_id).update(
+            {'government': no_spaces_at_edges.sub('', request.form.get('government'))}
+        )
+        Template_relations.query.filter_by(target_id=m.m_id, type=4).update(
+            {'templ_id': based_on}
+        )
+        db.session.commit()
 
         all_semantic_roles = [no_spaces_at_edges.sub('', request.form.get(i)) for i in request.form if
                               i.startswith('sr_') and request.form.get(i)]
@@ -469,9 +475,11 @@ def edit_meaning(m_id):
                     )
                     db.session.commit()
 
-        participants_to_delete = [request.form.get(i) for i in request.form if i.startswith('delete_p_') and request.form.get(i)]
+        participants_to_delete = [request.form.get(i) for i in request.form if
+                                  i.startswith('delete_p_') and request.form.get(i)]
         for p in participants_to_delete:
-            Template_relations.query.filter_by(templ_id=templ_id, target_id=p, type=9).delete()
+            Participants.query.filter_by(participant_id=p).delete()
+            Participant_relations.query.filter_by(participant_id=p).delete()
 
         all_participants = [i.split('_')[-1] for i in request.form if i.startswith('label_') and request.form.get(i)]
         for p in all_participants:
@@ -490,10 +498,10 @@ def edit_meaning(m_id):
             db.session.add(participant)
             db.session.commit()
             db.session.add(
-                Template_relations(
-                    templ_id=templ_id,
-                    target_id=participant.participant_id,
-                    type=9
+                Participant_relations(
+                    participant_id=participant.participant_id,
+                    target_id=m_id,
+                    type=4
                 )
             )
             if request.form.to_dict(flat=False).get(f'is_child_{p}'):
@@ -545,15 +553,12 @@ def edit_meaning(m_id):
                         )
                     )
                     db.session.commit()
-        Examples.query.filter_by(example_id=Template_relations.query.filter_by(templ_id=templ_id, type=3).first().target_id).update({'example': request.form.get('example')})
-        db.session.commit()
 
         ese_to_delete = [request.form.get(i) for i in request.form if
                          i.startswith('delete_ese_') and request.form.get(i)]
         for ese in ese_to_delete:
-            Template_relations.query.filter_by(templ_id=templ_id, target_id=ese, type=2).delete()
-            Event_structure.query.filter_by(ese_id=ese).delete()
             Event_structure_relations.query.filter_by(ese_id=ese).delete()
+            Event_structure.query.filter_by(ese_id=ese).delete()
             db.session.commit()
 
         event_structure = [(1, 'I'), (2, 'B'),
@@ -564,7 +569,8 @@ def edit_meaning(m_id):
                       part.startswith(f'{event_structure_part[-1]}_') and request.form.get(part)]:
                 item = Event_structure(ese=no_spaces_at_edges.sub('', request.form.get(i)),
                                        rank=request.form.get(f'rank_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                                       type=event_structure_part[0]
+                                       type=event_structure_part[0], status=request.form.get(
+                        f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}')
                                        )
                 db.session.add(item)
                 db.session.commit()
@@ -580,13 +586,14 @@ def edit_meaning(m_id):
                     db.session.add(
                         Event_structure_relations(
                             ese_id=item.ese_id,
-                            target_id=templ_id),
+                            target_id=based_on,
                             type=1
                         )
+                    )
                 db.session.add(
-                    Template_relations(
-                        templ_id=templ_id,
-                        target_id=item.ese_id,
+                    Event_structure_relations(
+                        ese_id=item.ese_id,
+                        target_id=m_id,
                         type=2
                     )
                 )
@@ -596,7 +603,8 @@ def edit_meaning(m_id):
                 i_id = int(i.split('_')[-1])
                 Event_structure.query.filter_by(ese_id=i_id, type=event_structure_part[0]).update(
                     {'ese': no_spaces_at_edges.sub('', request.form.get(i)),
-                     'rank': request.form.get(f'rank_existent_{event_structure_part[-1]}_{i.split("_")[-1]}')}
+                     'rank': request.form.get(f'rank_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
+                     'status': request.form.get(f'status_ese_existent_{event_structure_part[-1]}_{i.split("_")[-1]}')}
                 )
                 db.session.commit()
                 Event_structure_relations.query.filter_by(ese_id=i_id, type=1).delete()
@@ -612,9 +620,10 @@ def edit_meaning(m_id):
                     db.session.add(
                         Event_structure_relations(
                             ese_id=i_id,
-                            target_id=templ_id,
+                            target_id=int(request.form.get('based_on')),
                             type=1
                         )
                     )
                 db.session.commit()
-        return redirect(url_for('edit_template', templ_id=templ_id))
+        db.session.commit()
+        return Amend.flash('Изменения сохранены.', 'success', url_for('edit_meaning', m_id=m_id))

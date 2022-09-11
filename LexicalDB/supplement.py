@@ -9,6 +9,8 @@ from calendar import timegm
 from re import sub, IGNORECASE
 from json import dumps, loads
 from itsdangerous import URLSafeSerializer
+from LexicalDB.models import Participant_relations, Labels
+
 
 mail = Mail(app)
 
@@ -103,6 +105,62 @@ class Check():
         for i in self:
             dic.update({i:0})
         return list(dict(dic))
+    def split(what, by, to_int=False):
+        if what and isinstance(what, str):
+            if to_int:
+                return [int(i) for i in what.split(by)]
+            return what.split(by)
+        return []
+    def labels(self, type, tooltips=True):
+        if type == 'tax':
+            labels = [(Labels.query.get(l.target_id).l, Labels.query.get(l.target_id).decode, Labels.query.get(l.target_id).l_id) for l in
+                      Participant_relations.query.filter_by(type=2, participant_id=self).join(Labels, Participant_relations.target_id==Labels.l_id).order_by(
+                          Labels.rank.asc(), Labels.l.asc()).all()]
+        elif type == 'top':
+            labels = [(Labels.query.get(l.target_id).l, Labels.query.get(l.target_id).decode, Labels.query.get(l.target_id).l_id) for l in
+                      Participant_relations.query.filter_by(type=3, participant_id=self).join(Labels,
+                                                                         Participant_relations.target_id == Labels.l_id).order_by(
+                          Labels.rank.asc(), Labels.l.asc()).all()]
+        elif type == 'mer':
+            labels = [(Labels.query.get(l.target_id).l, Labels.query.get(l.target_id).decode, Labels.query.get(l.target_id).l_id) for l in
+                      Participant_relations.query.filter_by(type=1, participant_id=self).join(Labels,
+                                                                         Participant_relations.target_id == Labels.l_id).order_by(
+                          Labels.rank.asc(), Labels.l.asc()).all()]
+        if labels and type not in ['tax', 'top', 'mer']:
+            if tooltips:
+                labels = [
+                    f'<abbr style="font-variant-caps: small-caps" data-bs-toggle="tooltip" title="{l[1]}"><b>{l[0]}</b></abbr>'
+                    for l in labels]
+            else:
+                labels = [f'<span style="font-variant-caps: small-caps"><b>{l[0]}</b></span>' for l in labels]
+            labels = f"""<span>{', '.join(labels)}</span>"""
+        elif labels and type == 'tax':
+            if tooltips:
+                labels = [
+                    f'''<abbr style="font-variant-caps: small-caps" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
+                    for l in labels]
+            else:
+                labels = [f'<span style="font-variant-caps: small-caps"><b>{l[0]}</b></span>' for l in labels]
+            labels = f"""<span>{', '.join(labels)}</span>"""
+        elif labels and type == 'top':
+            if tooltips:
+                labels = [
+                    f'''<abbr style="font-variant-caps: small-caps" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
+                    for l in labels]
+            else:
+                labels = [f'<span style="font-variant-caps: small-caps"><b>{l[0]}</b></span>' for l in labels]
+            labels = f"""<span>{', '.join(labels)}</span>"""
+        elif labels and type == 'mer':
+            if tooltips:
+                labels = [
+                    f'''<abbr style="font-variant-caps: small-caps" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
+                    for l in labels]
+            else:
+                labels = [f'<span style="font-variant-caps: small-caps"><b>{l[0]}</b></span>' for l in labels]
+            labels = f"""<span>{', '.join(labels)}</span>"""
+        else:
+            return ''
+        return Markup(labels)
 
 class Emails():
     def send(heading, body, to, reply_to=None):

@@ -26,36 +26,38 @@ class Examples(db.Model):
     translation = db.Column(db.Text, unique=False, nullable=True)
     source = db.Column(db.Text, unique=False, nullable=True)
     comment = db.Column(db.Text, unique=False, nullable=True)
+    government = db.Column(db.Text, nullable=True, unique=False)
 
 class Semantic_roles(db.Model):
     sr_id = db.Column(db.Integer, primary_key=True)
     sr = db.Column(db.Text, unique=True)
 
-class Taxonomy(db.Model):
-    tax_id = db.Column(db.Integer, primary_key=True)
-    tax = db.Column(db.Text, unique=True)
-
-class Topology(db.Model):
-    top_id = db.Column(db.Integer, primary_key=True)
-    top = db.Column(db.Text, unique=True)
+class Labels(db.Model):
+    l_id = db.Column(db.Integer, primary_key=True)
+    l = db.Column(db.Text, unique=False, nullable=False)
+    decode= db.Column(db.Text, unique=False, nullable=True)
+    type = db.Column(db.Integer, nullable=False) # 1 -- mer, 2 -- tax, 3 -- top
+    rank = db.Column(db.Integer, nullable=True)
 
 class Participants(db.Model):
     participant_id = db.Column(db.Integer, primary_key=True)
     participant = db.Column(db.Text, unique=False)
     sr_id = db.Column(db.Integer, db.ForeignKey(Semantic_roles.sr_id))
     other = db.Column(db.Text, unique=True)
-    status = db.Column(db.Integer) #1 -- core, 2 -- peripheral
+    type = db.Column(db.Integer) #1 -- core, 2 -- peripheral
+    status = db.Column(db.Integer, nullable=False, default=1)  # 1 -- from template, 2 -- from meanings
 
 class Participant_relations(db.Model):
     participant_id = db.Column(db.Integer, db.ForeignKey(Participants.participant_id))
     target_id = db.Column(db.Integer, unique=False, primary_key=True)
-    type = db.Column(db.Integer, unique=False) #1 -- taxonomy, 2 -- topology, 3 -- parent-child, 4 -- participant-meaning
+    type = db.Column(db.Integer, unique=False) #1 -- taxonomy, 2 -- topology, 3 -- parent-child, 4 -- participant-meaning, 5 -- mereology
 
 class Templates(db.Model):
     templ_id = db.Column(db.Integer, primary_key=True)
     templ = db.Column(db.Text, unique=True)
     created_by = db.Column(db.Integer, db.ForeignKey(Users.user_id))
     datetime = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.Integer, nullable=False, default=1) # 1 -- not shown, 2 -- shown
 
 class Template_relations(db.Model):
     templ_id = db.Column(db.Integer, db.ForeignKey(Templates.templ_id))
@@ -104,5 +106,5 @@ class Forms(db.Model):
 class Meanings(db.Model):
     m_id = db.Column(db.Integer, primary_key=True)
     lex_id = db.Column(db.Integer, db.ForeignKey(Lexemes.lex_id))
-    example_id = db.Column(db.Integer, db.ForeignKey(Examples.example_id))
-    government = db.Column(db.Text, nullable=True, unique=False)
+    example_ids = db.Column(db.Text)
+    status = db.Column(db.Integer, nullable=False, default=1) # 1 -- not shown, 2 -- shown

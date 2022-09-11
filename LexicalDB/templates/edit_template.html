@@ -69,7 +69,7 @@
                 <div class="col-auto">
                     <select class="form-select form-select-sm" onchange="if (this.value) {addExistentParticipant(this.value)}" id="select_new">
                         <option selected value="">Создать с опорой на существующего</option>
-                        {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                        {% for p in Participants.query.filter_by(type=1).all() %}
                             <option value="{{ p.participant_id }}">
                                 {{ p.participant }}
                             </option>
@@ -92,6 +92,9 @@
                                         Редактировать
                                     </a>
                                 </div>
+                                <div class="col-auto">
+                                    <span>ID: <b>{{ p.target_id }}</b></span>
+                                </div>
                             </div>
                             <div class="col">
                                 <div class="form-floating">
@@ -112,7 +115,7 @@
                                            name="existent_sr_{{ p.target_id }}"
                                            placeholder="Введите текст"
                                            list="sr_list"
-                                           value="{{ Semantic_roles.query.get(Participants.query.get(p.target_id).sr_id).sr }}"
+                                           value="{% if Participants.query.get(p.target_id).sr_id %}{{ Semantic_roles.query.get(Participants.query.get(p.target_id).sr_id).sr }}{% endif %}"
                                            oninput="suggestions('sr', existent_sr_{{ p.target_id }}.value)"
                                            disabled
                                     >
@@ -129,25 +132,29 @@
                                        aria-expanded="false"
                                        style="text-decoration-line: none; font-variant: small-caps"
                                     >
-                                        <span>Таксономия</span>
+                                        {% if Check.labels(p.target_id, 'mer', tooltips=False) %}
+                                            <span>{{ Check.labels(p.target_id, 'mer', tooltips=False) }}</span>
+                                        {% else %}
+                                            <span>Мереология</span>
+                                        {% endif %}
                                     </a>
                                     <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                        {% for tax in Taxonomy.query.all() %}
+                                        {% for l in Labels.query.filter_by(type=1).all() %}
                                             <li>
                                                 <div class="form-check">
                                                     <input class="form-check-input"
                                                            type="checkbox"
-                                                           value="{{ tax.tax_id }}"
-                                                           id="existent_tax_{{ p.target_id }}_{{ tax.tax_id }}"
-                                                           name="existent_tax_{{ p.target_id }}_{{ tax.tax_id }}"
-                                                           {% if Participant_relations.query.filter_by(participant_id=p.target_id, target_id=tax.tax_id, type=1).first() %}checked{% endif %}
+                                                           value="{{ l.l_id }}"
+                                                           id="existent_mer_{{ p.target_id }}_{{ l.l_id }}"
+                                                           name="existent_mer_{{ p.target_id }}_{{ l.l_id }}"
+                                                           {% if Participant_relations.query.filter_by(participant_id=p.target_id, target_id=l.l_id, type=5).first() %}checked{% endif %}
                                                            disabled
                                                     >
                                                     <label class="form-check-label"
-                                                           for="existent_tax_{{ p.target_id }}_{{ tax.tax_id }}"
+                                                           for="existent_mer_{{ p.target_id }}_{{ l.l_id }}"
                                                            style="font-variant: small-caps"
                                                     >
-                                                        {{ tax.tax }}
+                                                        {{ l.l }}
                                                     </label>
                                                 </div>
                                             </li>
@@ -165,25 +172,69 @@
                                        aria-expanded="false"
                                        style="text-decoration-line: none; font-variant: small-caps"
                                     >
-                                        <span>Топология</span>
+                                        {% if Check.labels(p.target_id, 'tax', tooltips=False) %}
+                                            <span>{{ Check.labels(p.target_id, 'tax', tooltips=False) }}</span>
+                                        {% else %}
+                                            <span>Таксономия</span>
+                                        {% endif %}
                                     </a>
                                     <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                        {% for top in Topology.query.all() %}
+                                        {% for l in Labels.query.filter_by(type=2).all() %}
                                             <li>
                                                 <div class="form-check">
                                                     <input class="form-check-input"
                                                            type="checkbox"
-                                                           value="{{ top.top_id }}"
-                                                           id="existent_top_{{ p.target_id }}_{{ top.top_id }}"
-                                                           name="existent_top_{{ p.target_id }}_{{ top.top_id }}"
-                                                           {% if Participant_relations.query.filter_by(participant_id=p.target_id, target_id=top.top_id, type=2).first() %}checked{% endif %}
+                                                           value="{{ l.l_id }}"
+                                                           id="existent_tax_{{ p.target_id }}_{{ l.l_id }}"
+                                                           name="existent_tax_{{ p.target_id }}_{{ l.l_id }}"
+                                                           {% if Participant_relations.query.filter_by(participant_id=p.target_id, target_id=l.l_id, type=1).first() %}checked{% endif %}
                                                            disabled
                                                     >
                                                     <label class="form-check-label"
-                                                           for="existent_top_{{ p.target_id }}_{{ top.top_id }}"
+                                                           for="existent_tax_{{ p.target_id }}_{{ l.l_id }}"
                                                            style="font-variant: small-caps"
                                                     >
-                                                        {{ top.top }}
+                                                        {{ l.l }}
+                                                    </label>
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="col-12 align-items-center text-center mb-1">
+                                    <a class="text-primary h5"
+                                       href="javascript:;"
+                                       role="button"
+                                       data-bs-toggle="dropdown"
+                                       data-bs-auto-close="outside"
+                                       aria-expanded="false"
+                                       style="text-decoration-line: none; font-variant: small-caps"
+                                    >
+                                        {% if Check.labels(p.target_id, 'top', tooltips=False) %}
+                                            <span>{{ Check.labels(p.target_id, 'top', tooltips=False) }}</span>
+                                        {% else %}
+                                            <span>Топология</span>
+                                        {% endif %}
+                                    </a>
+                                    <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                        {% for l in Labels.query.filter_by(type=3).all() %}
+                                            <li>
+                                                <div class="form-check">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           value="{{ l.l_id }}"
+                                                           id="existent_top_{{ p.target_id }}_{{ l.l_id }}"
+                                                           name="existent_top_{{ p.target_id }}_{{ l.l_id }}"
+                                                           {% if Participant_relations.query.filter_by(participant_id=p.target_id, target_id=l.l_id, type=2).first() %}checked{% endif %}
+                                                           disabled
+                                                    >
+                                                    <label class="form-check-label"
+                                                           for="existent_top_{{ p.target_id }}_{{ l.l_id }}"
+                                                           style="font-variant: small-caps"
+                                                    >
+                                                        {{ l.l }}
                                                     </label>
                                                 </div>
                                             </li>
@@ -216,7 +267,7 @@
                                     <label for="is_child_1" class="form-label">Родительский участник</label>
                                     <select class="form-select" size="4" id="is_child_1" name="is_child_1" disabled multiple>
                                         <option value="">отсутствует</option>
-                                        {% for i in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                                        {% for i in Participants.query.filter_by(type=1).all() %}
                                             <option value="{{ i.participant_id }}"{% if Participant_relations.query.filter_by(participant_id=i.participant_id, target_id=p.target_id, type=3).first() %} selected{% endif %}>
                                                 {{ i.participant }}
                                             </option>
@@ -229,11 +280,14 @@
                 </div>
             </div>
             <div class="container my-2">
-                <textarea class="form-control overflow-auto"
+                <div class="form-floating">
+                    <textarea class="form-control overflow-auto"
                           id="example"
                           name="example"
                           placeholder="Введите текст примера"
                           style="max-height: 300px">{% if Template_relations.query.filter_by(templ_id=templ_id, type=3).first() %}{{ Examples.query.get(Template_relations.query.filter_by(templ_id=templ_id, type=3).first().target_id).example }}{% endif %}</textarea>
+                    <label for="example">Пример</label>
+                </div>
             </div>
             <div class="container mb-2">
                 <div class="row g-2 mb-2 align-items-center justify-content-start">
@@ -545,14 +599,15 @@
                 </div>
             </div>
         </form>
-        <datalist id="sr_list"></datalist>
-        <datalist id="I_list"></datalist>
-        <datalist id="B_list"></datalist>
-        <datalist id="P_list"></datalist>
-        <datalist id="F_list"></datalist>
-        <datalist id="R_list"></datalist>
-        <datalist id="Impl_list"></datalist>
+        </div>
     </div>
+    <datalist id="sr_list"></datalist>
+    <datalist id="I_list"></datalist>
+    <datalist id="B_list"></datalist>
+    <datalist id="P_list"></datalist>
+    <datalist id="F_list"></datalist>
+    <datalist id="R_list"></datalist>
+    <datalist id="Impl_list"></datalist>
     <script type='text/javascript'>
         for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
             autosize(document.getElementsByTagName('textarea')[i]);
@@ -569,7 +624,7 @@
                     <div class="col-auto row align-items-center justify-content-center g-2">
                         <div class="col-auto">
                             <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_${current_num})">
-                                Открепить
+                                Удалить
                             </button>
                         </div>
                     </div>
@@ -604,24 +659,71 @@
                                data-bs-auto-close="outside"
                                aria-expanded="false"
                                style="text-decoration-line: none; font-variant: small-caps"
+                               id="mer_ls_${current_num}"
                             >
-                                <span>Таксономия</span>
+                                <span>Мереология</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for tax in Taxonomy.query.all() %}
+                                {% for l in Labels.query.filter_by(type=1).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
                                                    type="checkbox"
-                                                   value="{{ tax.tax_id }}"
-                                                   id="tax_${current_num}_{{ tax.tax_id }}"
-                                                   name="tax_${current_num}_{{ tax.tax_id }}"
+                                                   value="{{ l.l_id }}"
+                                                   id="mer_${current_num}_{{ l.l_id }}"
+                                                   name="mer_${current_num}_{{ l.l_id }}"
+                                                   full_name="{{ l.l }}"
+                                                   onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
                                             >
                                             <label class="form-check-label"
-                                                   for="tax_${current_num}_{{ tax.tax_id }}"
+                                                   for="mer_${current_num}_{{ l.l_id }}"
                                                    style="font-variant: small-caps"
                                             >
-                                                {{ tax.tax }}
+                                                {{ l.l }}
+                                            </label>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="new_mer_${current_num}"
+                                   name="new_mer_${current_num}"
+                                   placeholder="Введите текст"
+                            >
+                            <label for="new_mer_${current_num}">Введите новые тэги через запятую</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="col-12 align-items-center text-center mb-1">
+                            <a class="text-primary h5"
+                               href="javascript:;"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               data-bs-auto-close="outside"
+                               aria-expanded="false"
+                               style="text-decoration-line: none; font-variant: small-caps"
+                               id="tax_ls_${current_num}"
+                            >
+                                <span>Таксономия</span>
+                            </a>
+                            <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                {% for l in Labels.query.filter_by(type=2).all() %}
+                                    <li>
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   value="{{ l.l_id }}"
+                                                   id="tax_${current_num}_{{ l.l_id }}"
+                                                   name="tax_${current_num}_{{ l.l_id }}"
+                                                   full_name="{{ l.l }}"
+                                                   onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                            >
+                                            <label class="form-check-label"
+                                                   for="tax_${current_num}_{{ l.l_id }}"
+                                                   style="font-variant: small-caps"
+                                            >
+                                                {{ l.l }}
                                             </label>
                                         </div>
                                     </li>
@@ -645,24 +747,27 @@
                                data-bs-auto-close="outside"
                                aria-expanded="false"
                                style="text-decoration-line: none; font-variant: small-caps"
+                               id="top_ls_${current_num}"
                             >
                                 <span>Топология</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for top in Topology.query.all() %}
+                                {% for l in Labels.query.filter_by(type=3).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
                                                    type="checkbox"
-                                                   value="{{ top.top_id }}"
-                                                   id="top_${current_num}_{{ top.top_id }}"
-                                                   name="top_${current_num}_{{ top.top_id }}"
+                                                   value="{{ l.l_id }}"
+                                                   id="top_${current_num}_{{ l.l_id }}"
+                                                   name="top_${current_num}_{{ l.l_id }}"
+                                                   full_name="{{ l.l }}"
+                                                   onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
                                             >
                                             <label class="form-check-label"
-                                                   for="top_${current_num}_{{ top.top_id }}"
+                                                   for="top_${current_num}_{{ l.l_id }}"
                                                    style="font-variant: small-caps"
                                             >
-                                                {{ top.top }}
+                                                {{ l.l }}
                                             </label>
                                         </div>
                                     </li>
@@ -700,7 +805,7 @@
                             <label for="is_child_${current_num}" class="form-label">Родительский участник</label>
                             <select class="form-select" size="4" id="is_child_${current_num}" name="is_child_${current_num}" multiple>
                                 <option value="">отсутствует</option>
-                                {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                                {% for p in Participants.query.filter_by(type=1).all() %}
                                     <option value="{{ p.participant_id }}">
                                         {{ p.participant }}
                                     </option>
@@ -745,7 +850,7 @@
                                 <div class="col-auto row align-items-center justify-content-center g-2">
                                     <div class="col-auto">
                                         <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_${current_num})">
-                                            Открепить
+                                            Удалить
                                         </button>
                                     </div>
                                 </div>
@@ -781,24 +886,71 @@
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
                                            style="text-decoration-line: none; font-variant: small-caps"
+                                           id="mer_ls_${current_num}"
                                         >
-                                            <span>Таксономия</span>
+                                            ${items['mer_names']}
                                         </a>
                                         <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                            {% for tax in Taxonomy.query.all() %}
+                                            {% for l in Labels.query.filter_by(type=1).all() %}
                                                 <li>
                                                     <div class="form-check">
                                                         <input class="form-check-input"
                                                                type="checkbox"
-                                                               value="{{ tax.tax_id }}"
-                                                               id="tax_${current_num}_{{ tax.tax_id }}"
-                                                               name="tax_${current_num}_{{ tax.tax_id }}"
+                                                               value="{{ l.l_id }}"
+                                                               id="mer_${current_num}_{{ l.l_id }}"
+                                                               name="mer_${current_num}_{{ l.l_id }}"
+                                                               full_name="{{ l.l }}"
+                                                               onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
                                                         >
                                                         <label class="form-check-label"
-                                                               for="tax_${current_num}_{{ tax.tax_id }}"
+                                                               for="mer_${current_num}_{{ l.l_id }}"
                                                                style="font-variant: small-caps"
                                                         >
-                                                            {{ tax.tax }}
+                                                            {{ l.l }}
+                                                        </label>
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="new_mer_${current_num}"
+                                               name="new_mer_${current_num}"
+                                               placeholder="Введите текст"
+                                        >
+                                        <label for="new_mer_${current_num}">Введите новые тэги через запятую</label>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="col-12 align-items-center text-center mb-1">
+                                        <a class="text-primary h5"
+                                           href="javascript:;"
+                                           role="button"
+                                           data-bs-toggle="dropdown"
+                                           data-bs-auto-close="outside"
+                                           aria-expanded="false"
+                                           style="text-decoration-line: none; font-variant: small-caps"
+                                           id="tax_ls_${current_num}"
+                                        >
+                                            ${items['tax_names']}
+                                        </a>
+                                        <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                            {% for l in Labels.query.filter_by(type=2).all() %}
+                                                <li>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input"
+                                                               type="checkbox"
+                                                               value="{{ l.l_id }}"
+                                                               id="tax_${current_num}_{{ l.l_id }}"
+                                                               name="tax_${current_num}_{{ l.l_id }}"
+                                                               full_name="{{ l.l }}"
+                                                               onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                                        >
+                                                        <label class="form-check-label"
+                                                               for="tax_${current_num}_{{ l.l_id }}"
+                                                               style="font-variant: small-caps"
+                                                        >
+                                                            {{ l.l }}
                                                         </label>
                                                     </div>
                                                 </li>
@@ -822,24 +974,27 @@
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
                                            style="text-decoration-line: none; font-variant: small-caps"
+                                           id="top_ls_${current_num}"
                                         >
-                                            <span>Топология</span>
+                                            ${items['top_names']}
                                         </a>
                                         <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                            {% for top in Topology.query.all() %}
+                                            {% for l in Labels.query.filter_by(type=3).all() %}
                                                 <li>
                                                     <div class="form-check">
                                                         <input class="form-check-input"
                                                                type="checkbox"
-                                                               value="{{ top.top_id }}"
-                                                               id="top_${current_num}_{{ top.top_id }}"
-                                                               name="top_${current_num}_{{ top.top_id }}"
+                                                               value="{{ l.l_id }}"
+                                                               id="top_${current_num}_{{ l.l_id }}"
+                                                               name="top_${current_num}_{{ l.l_id }}"
+                                                               full_name="{{ l.l }}"
+                                                               onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
                                                         >
                                                         <label class="form-check-label"
-                                                               for="top_${current_num}_{{ top.top_id }}"
+                                                               for="top_${current_num}_{{ l.l_id }}"
                                                                style="font-variant: small-caps"
                                                         >
-                                                            {{ top.top }}
+                                                            {{ l.l }}
                                                         </label>
                                                     </div>
                                                 </li>
@@ -878,7 +1033,7 @@
                                         <label for="is_child_${current_num}" class="form-label">Родительский участник</label>
                                         <select class="form-select" size="4" id="is_child_${current_num}" name="is_child_${current_num}" multiple>
                                             <option value="">отсутствует</option>
-                                            {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                                            {% for p in Participants.query.filter_by(type=1).all() %}
                                                 <option value="{{ p.participant_id }}">
                                                     {{ p.participant }}
                                                 </option>
@@ -893,6 +1048,9 @@
                             };
                             for (let i of items['top']) {
                                 $(`#top_${current_num}_${i}`).prop('checked', true);
+                            };
+                            for (let i of items['mer']) {
+                                $(`#mer_${current_num}_${i}`).prop('checked', true);
                             };
                             for (let i of items['parents']) {
                                 $(`#is_child_${current_num} option[value="${i}"`).prop('selected', true);
@@ -1079,5 +1237,30 @@
                 $('.is-invalid').focus();
             }
         });
+
+        function addLabels(aim, dropdown, type) {
+            if ($(`#${dropdown}`).is(':checked')) {
+                const re_ns = RegExp('\n', 'g');
+                const re_spaces = RegExp(' +$', 'gm');
+                var current_text = $(`#${aim}`).text().replaceAll(re_ns, '').replace(re_spaces, '');
+                if (current_text.match(type)) {
+                    var selected = [$(`#${dropdown}`).attr('full_name')];
+                } else {
+                    var selected = [current_text, $(`#${dropdown}`).attr('full_name')];
+                }
+                $(`#${aim}`).text(selected.join(', '));
+            } else {
+                var label = $(`#${dropdown}`).attr('full_name');
+                const re = RegExp(`(,)*( |^)${label}`.replace('\.', '\\\.'), 'g');
+                const re_spaces = RegExp('[ \n]+$', 'gm');
+                const re_beginning = RegExp('^[ \n]*, ', 'gm');
+                var new_text = $(`#${aim}`).text().replace(re, '').replace(re_spaces, '');
+                if (new_text == '') {
+                    new_text = type
+                }
+                new_text = new_text.replace(re_beginning, '')
+                $(`#${aim}`).text(new_text)
+            }
+        }
     </script>
 {% endblock %}

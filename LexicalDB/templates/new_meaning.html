@@ -8,7 +8,7 @@
             <div class="col-12 col-lg-9 row g-2">
                 <div class="col-12">
                     <div class="form-floating">
-                        <select form="meaning" class="form-select" id="based_on" name="based_on" onchange="addFromTemplate(this.value)" required>
+                        <select form="meaning" class="form-select" id="based_on" name="based_on" onchange="addFromTemplate(this.value)">
                             <option value="">отсутствует</option>
                             {% for t in Templates.query.all() %}
                                 <option value="{{ t.templ_id }}">{{ t.templ }}</option>
@@ -50,13 +50,13 @@
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-sm btn-outline-success" onclick="addParticipant()" type="button">
-                        <span class="text-center">Создать нового участника</span>
+                        <span class="text-center">Новый участник</span>
                     </button>
                 </div>
                 <div class="col-auto">
                     <select class="form-select form-select-sm" onchange="if (this.value) {addExistentParticipant(this.value)}" id="select_new">
-                        <option selected value="">Создать с опорой на существующего</option>
-                        {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                        <option selected value="">Существующий участник</option>
+                        {% for p in Participants.query.filter_by(status=1).all() %}
                             <option value="{{ p.participant_id }}">
                                 {{ p.participant }}
                             </option>
@@ -64,23 +64,35 @@
                     </select>
                 </div>
             </div>
-            <div class="collapse show container overflow-auto" style="max-height: 60vh;" id="collapse_participants">
+            <div class="collapse show container overflow-auto mb-2" style="max-height: 60vh;" id="collapse_participants">
                 <div class="row row-cols-1 row-cols-lg-3 g-2" id="participants">
                 </div>
             </div>
-            <div class="container my-2">
-                <textarea class="form-control overflow-auto"
-                          id="example"
-                          name="example"
-                          placeholder="Введите текст примера"
-                          style="max-height: 300px"></textarea>
+            <div class="container row g-2 mb-2 align-items-center justify-content-start">
+                <div class="col-auto">
+                    <span class="form-label h5">Примеры</span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-primary"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapse_examples"
+                            aria-expanded="true"
+                            aria-controls="collapse_examples"
+                            onclick="if (this.classList.contains('collapsed')) {this.textContent = 'Показать'} else {this.textContent = 'Скрыть'};"
+                            >
+                        Скрыть
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="addExample()" type="button">
+                        <span class="text-center">Новый пример</span>
+                    </button>
+                </div>
             </div>
-            <div class="container mb-2">
-                <textarea class="form-control overflow-auto"
-                          id="government"
-                          name="government"
-                          placeholder="Введите формулу управления"
-                          style="max-height: 300px"></textarea>
+            <div class="container mb-2 row align-items-center justify-content-around overflow-auto collapse show" style="max-height: 60vh;" id="collapse_examples">
+                <div class="row row-cols-1 g-2" id="examples">
+                </div>
             </div>
             <div class="container mb-2">
                 <div class="row g-2 mb-2 align-items-center justify-content-start">
@@ -207,6 +219,7 @@
                             <input type="text" class="form-control" id="label_${current_num}"
                                    name="label_${current_num}"
                                    placeholder="Введите текст"
+                                   oninput="checkLabelAvailability(this, this.value)"
                                    required
                             >
                             <label for="label_${current_num}">Ярлык</label>
@@ -232,24 +245,71 @@
                                data-bs-auto-close="outside"
                                aria-expanded="false"
                                style="text-decoration-line: none; font-variant: small-caps"
+                               id="mer_ls_${current_num}"
                             >
-                                <span>Таксономия</span>
+                                <span>Мереология</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for tax in Taxonomy.query.all() %}
+                                {% for l in Labels.query.filter_by(type=1).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
                                                    type="checkbox"
-                                                   value="{{ tax.tax_id }}"
-                                                   id="tax_${current_num}_{{ tax.tax_id }}"
-                                                   name="tax_${current_num}_{{ tax.tax_id }}"
+                                                   value="{{ l.l_id }}"
+                                                   id="mer_${current_num}_{{ l.l_id }}"
+                                                   name="mer_${current_num}_{{ l.l_id }}"
+                                                   full_name="{{ l.l }}"
+                                                   onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
                                             >
                                             <label class="form-check-label"
-                                                   for="tax_${current_num}_{{ tax.tax_id }}"
+                                                   for="mer_${current_num}_{{ l.l_id }}"
                                                    style="font-variant: small-caps"
                                             >
-                                                {{ tax.tax }}
+                                                {{ l.l }}
+                                            </label>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="new_mer_${current_num}"
+                                   name="new_mer_${current_num}"
+                                   placeholder="Введите текст"
+                            >
+                            <label for="new_mer_${current_num}">Введите новые тэги через запятую</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="col-12 align-items-center text-center mb-1">
+                            <a class="text-primary h5"
+                               href="javascript:;"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               data-bs-auto-close="outside"
+                               aria-expanded="false"
+                               style="text-decoration-line: none; font-variant: small-caps"
+                               id="tax_ls_${current_num}"
+                            >
+                                <span>Таксономия</span>
+                            </a>
+                            <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                {% for l in Labels.query.filter_by(type=2).all() %}
+                                    <li>
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   value="{{ l.l_id }}"
+                                                   id="tax_${current_num}_{{ l.l_id }}"
+                                                   name="tax_${current_num}_{{ l.l_id }}"
+                                                   full_name="{{ l.l }}"
+                                                   onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                            >
+                                            <label class="form-check-label"
+                                                   for="tax_${current_num}_{{ l.l_id }}"
+                                                   style="font-variant: small-caps"
+                                            >
+                                                {{ l.l }}
                                             </label>
                                         </div>
                                     </li>
@@ -273,24 +333,27 @@
                                data-bs-auto-close="outside"
                                aria-expanded="false"
                                style="text-decoration-line: none; font-variant: small-caps"
+                               id="top_ls_${current_num}"
                             >
                                 <span>Топология</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for top in Topology.query.all() %}
+                                {% for l in Labels.query.filter_by(type=3).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
                                                    type="checkbox"
-                                                   value="{{ top.top_id }}"
-                                                   id="top_${current_num}_{{ top.top_id }}"
-                                                   name="top_${current_num}_{{ top.top_id }}"
+                                                   value="{{ l.l_id }}"
+                                                   id="top_${current_num}_{{ l.l_id }}"
+                                                   name="top_${current_num}_{{ l.l_id }}"
+                                                   full_name="{{ l.l }}"
+                                                   onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
                                             >
                                             <label class="form-check-label"
-                                                   for="top_${current_num}_{{ top.top_id }}"
+                                                   for="top_${current_num}_{{ l.l_id }}"
                                                    style="font-variant: small-caps"
                                             >
-                                                {{ top.top }}
+                                                {{ l.l }}
                                             </label>
                                         </div>
                                     </li>
@@ -328,7 +391,7 @@
                             <label for="is_child_${current_num}" class="form-label">Родительский участник</label>
                             <select class="form-select" size="4" id="is_child_${current_num}" name="is_child_${current_num}" multiple>
                                 <option value="">отсутствует</option>
-                                {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                                {% for p in Participants.query.filter_by(type=1).all() %}
                                     <option value="{{ p.participant_id }}">
                                         {{ p.participant }}
                                     </option>
@@ -382,6 +445,7 @@
                                         <input type="text" class="form-control" id="label_${current_num}"
                                                name="label_${current_num}"
                                                placeholder="Введите текст"
+                                               oninput="checkLabelAvailability(this, this.value)"
                                                required
                                         >
                                         <label for="label_${current_num}">Ярлык</label>
@@ -408,24 +472,71 @@
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
                                            style="text-decoration-line: none; font-variant: small-caps"
+                                           id="mer_ls_${current_num}"
                                         >
-                                            <span>Таксономия</span>
+                                            ${items['mer_names']}
                                         </a>
                                         <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                            {% for tax in Taxonomy.query.all() %}
+                                            {% for l in Labels.query.filter_by(type=1).all() %}
                                                 <li>
                                                     <div class="form-check">
                                                         <input class="form-check-input"
                                                                type="checkbox"
-                                                               value="{{ tax.tax_id }}"
-                                                               id="tax_${current_num}_{{ tax.tax_id }}"
-                                                               name="tax_${current_num}_{{ tax.tax_id }}"
+                                                               value="{{ l.l_id }}"
+                                                               id="mer_${current_num}_{{ l.l_id }}"
+                                                               name="mer_${current_num}_{{ l.l_id }}"
+                                                               full_name="{{ l.l }}"
+                                                               onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
                                                         >
                                                         <label class="form-check-label"
-                                                               for="tax_${current_num}_{{ tax.tax_id }}"
+                                                               for="mer_${current_num}_{{ l.l_id }}"
                                                                style="font-variant: small-caps"
                                                         >
-                                                            {{ tax.tax }}
+                                                            {{ l.l }}
+                                                        </label>
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="new_mer_${current_num}"
+                                               name="new_mer_${current_num}"
+                                               placeholder="Введите текст"
+                                        >
+                                        <label for="new_mer_${current_num}">Введите новые тэги через запятую</label>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="col-12 align-items-center text-center mb-1">
+                                        <a class="text-primary h5"
+                                           href="javascript:;"
+                                           role="button"
+                                           data-bs-toggle="dropdown"
+                                           data-bs-auto-close="outside"
+                                           aria-expanded="false"
+                                           style="text-decoration-line: none; font-variant: small-caps"
+                                           id="tax_ls_${current_num}"
+                                        >
+                                            ${items['tax_names']}
+                                        </a>
+                                        <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                            {% for l in Labels.query.filter_by(type=2).all() %}
+                                                <li>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input"
+                                                               type="checkbox"
+                                                               value="{{ l.l_id }}"
+                                                               id="tax_${current_num}_{{ l.l_id }}"
+                                                               name="tax_${current_num}_{{ l.l_id }}"
+                                                               full_name="{{ l.l }}"
+                                                               onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                                        >
+                                                        <label class="form-check-label"
+                                                               for="tax_${current_num}_{{ l.l_id }}"
+                                                               style="font-variant: small-caps"
+                                                        >
+                                                            {{ l.l }}
                                                         </label>
                                                     </div>
                                                 </li>
@@ -449,24 +560,27 @@
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
                                            style="text-decoration-line: none; font-variant: small-caps"
+                                           id="top_ls_${current_num}"
                                         >
-                                            <span>Топология</span>
+                                            ${items['top_names']}
                                         </a>
                                         <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                            {% for top in Topology.query.all() %}
+                                            {% for l in Labels.query.filter_by(type=3).all() %}
                                                 <li>
                                                     <div class="form-check">
                                                         <input class="form-check-input"
                                                                type="checkbox"
-                                                               value="{{ top.top_id }}"
-                                                               id="top_${current_num}_{{ top.top_id }}"
-                                                               name="top_${current_num}_{{ top.top_id }}"
+                                                               value="{{ l.l_id }}"
+                                                               id="top_${current_num}_{{ l.l_id }}"
+                                                               name="top_${current_num}_{{ l.l_id }}"
+                                                               full_name="{{ l.l }}"
+                                                               onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
                                                         >
                                                         <label class="form-check-label"
-                                                               for="top_${current_num}_{{ top.top_id }}"
+                                                               for="top_${current_num}_{{ l.l_id }}"
                                                                style="font-variant: small-caps"
                                                         >
-                                                            {{ top.top }}
+                                                            {{ l.l }}
                                                         </label>
                                                     </div>
                                                 </li>
@@ -505,7 +619,7 @@
                                         <label for="is_child_${current_num}" class="form-label">Родительский участник</label>
                                         <select class="form-select" size="4" id="is_child_${current_num}" name="is_child_${current_num}" multiple>
                                             <option value="">отсутствует</option>
-                                            {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                                            {% for p in Participants.query.filter_by(type=1).all() %}
                                                 <option value="{{ p.participant_id }}">
                                                     {{ p.participant }}
                                                 </option>
@@ -520,6 +634,9 @@
                             };
                             for (let i of items['top']) {
                                 $(`#top_${current_num}_${i}`).prop('checked', true);
+                            };
+                            for (let i of items['mer']) {
+                                $(`#mer_${current_num}_${i}`).prop('checked', true);
                             };
                             for (let i of items['parents']) {
                                 $(`#is_child_${current_num} option[value="${i}"`).prop('selected', true);
@@ -541,13 +658,23 @@
             }
             if (id == 'Implication') {
                 var type = 'Impl';
+                var assert_presuppose = ``
             } else {
                 var type = Array.from(id)[0];
+                var assert_presuppose =
+            `
+            <div class="col-auto">
+                <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}}" name="status_ese_${type}_${current_num}">
+                    <option value="1">ассерция</option>
+                    <option value="2">пресуппозиция</option>
+                </select>
+            </div>
+            `
             }
             $(`#${id}`).append(
             `
             <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
-                <div class="col-3 col-xl-2 g-2 mt-0 row align-items-center justify-content-center">
+                <div class="col-3 col-xxl-2 g-2 mt-0 row align-items-center justify-content-center">
                     <div class="col-auto">
                         <input class="form-control form-control-sm"
                                type="number" required
@@ -556,14 +683,9 @@
                                name="rank_${type}_${current_num}"
                                >
                     </div>
-                    <div class="col-auto">
-                        <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}}" name="status_ese_${type}_${current_num}">
-                            <option value="1">ассерция</option>
-                            <option value="2">пресуппозиция</option>
-                        </select>
-                    </div>
+                    ${assert_presuppose}
                 </div>
-                <div class="col-9 col-xl-2">
+                <div class="col-9 col-xxl-2">
                     <div class="form-floating">
                         <select class="form-select" id="is_child_${type}_${current_num}}" name="is_child_${type}_${current_num}">
                             <option value="">нет</option>
@@ -698,24 +820,71 @@
                                                        data-bs-auto-close="outside"
                                                        aria-expanded="false"
                                                        style="text-decoration-line: none; font-variant: small-caps"
+                                                       id="mer_ls_${current_num}"
                                                     >
-                                                        <span>Таксономия</span>
+                                                        ${p['mer_names']}
                                                     </a>
                                                     <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                                        {% for tax in Taxonomy.query.all() %}
+                                                        {% for l in Labels.query.filter_by(type=1).all() %}
                                                             <li>
                                                                 <div class="form-check">
                                                                     <input class="form-check-input"
                                                                            type="checkbox"
-                                                                           value="{{ tax.tax_id }}"
-                                                                           id="tax_${current_num}_{{ tax.tax_id }}"
-                                                                           name="tax_${current_num}_{{ tax.tax_id }}"
+                                                                           value="{{ l.l_id }}"
+                                                                           id="mer_${current_num}_{{ l.l_id }}"
+                                                                           name="mer_${current_num}_{{ l.l_id }}"
+                                                                           full_name="{{ l.l }}"
+                                                                           onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
                                                                     >
                                                                     <label class="form-check-label"
-                                                                           for="tax_${current_num}_{{ tax.tax_id }}"
+                                                                           for="mer_${current_num}_{{ l.l_id }}"
                                                                            style="font-variant: small-caps"
                                                                     >
-                                                                        {{ tax.tax }}
+                                                                        {{ l.l }}
+                                                                    </label>
+                                                                </div>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                                <div class="form-floating">
+                                                    <input type="text" class="form-control" id="new_mer_${current_num}"
+                                                           name="new_mer_${current_num}"
+                                                           placeholder="Введите текст"
+                                                    >
+                                                    <label for="new_mer_${current_num}">Введите новые тэги через запятую</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="col-12 align-items-center text-center mb-1">
+                                                    <a class="text-primary h5"
+                                                       href="javascript:;"
+                                                       role="button"
+                                                       data-bs-toggle="dropdown"
+                                                       data-bs-auto-close="outside"
+                                                       aria-expanded="false"
+                                                       style="text-decoration-line: none; font-variant: small-caps"
+                                                       id="tax_ls_${current_num}"
+                                                    >
+                                                        ${p['tax_names']}
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                                        {% for l in Labels.query.filter_by(type=2).all() %}
+                                                            <li>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input"
+                                                                           type="checkbox"
+                                                                           value="{{ l.l_id }}"
+                                                                           id="tax_${current_num}_{{ l.l_id }}"
+                                                                           name="tax_${current_num}_{{ l.l_id }}"
+                                                                           full_name="{{ l.l }}"
+                                                                           onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                                                    >
+                                                                    <label class="form-check-label"
+                                                                           for="tax_${current_num}_{{ l.l_id }}"
+                                                                           style="font-variant: small-caps"
+                                                                    >
+                                                                        {{ l.l }}
                                                                     </label>
                                                                 </div>
                                                             </li>
@@ -739,24 +908,27 @@
                                                        data-bs-auto-close="outside"
                                                        aria-expanded="false"
                                                        style="text-decoration-line: none; font-variant: small-caps"
+                                                       id="top_ls_${current_num}"
                                                     >
-                                                        <span>Топология</span>
+                                                        ${p['top_names']}
                                                     </a>
                                                     <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                                        {% for top in Topology.query.all() %}
+                                                        {% for l in Labels.query.filter_by(type=3).all() %}
                                                             <li>
                                                                 <div class="form-check">
                                                                     <input class="form-check-input"
                                                                            type="checkbox"
-                                                                           value="{{ top.top_id }}"
-                                                                           id="top_${current_num}_{{ top.top_id }}"
-                                                                           name="top_${current_num}_{{ top.top_id }}"
+                                                                           value="{{ l.l_id }}"
+                                                                           id="top_${current_num}_{{ l.l_id }}"
+                                                                           name="top_${current_num}_{{ l.l_id }}"
+                                                                           full_name="{{ l.l }}"
+                                                                           onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
                                                                     >
                                                                     <label class="form-check-label"
-                                                                           for="top_${current_num}_{{ top.top_id }}"
+                                                                           for="top_${current_num}_{{ l.l_id }}"
                                                                            style="font-variant: small-caps"
                                                                     >
-                                                                        {{ top.top }}
+                                                                        {{ l.l }}
                                                                     </label>
                                                                 </div>
                                                             </li>
@@ -795,7 +967,7 @@
                                                     <label for="is_child_${current_num}" class="form-label">Родительский участник</label>
                                                     <select class="form-select" size="4" id="is_child_${current_num}" name="is_child_${current_num}" multiple>
                                                         <option value="">отсутствует</option>
-                                                        {% for p in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
+                                                        {% for p in Participants.query.filter_by(type=1).all() %}
                                                             <option value="{{ p.participant_id }}">
                                                                 {{ p.participant }}
                                                             </option>
@@ -832,7 +1004,7 @@
                                         $(`#${ese}`).append(
                                         `
                                         <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
-                                            <div class="col-3 col-xl-2 g-2 mt-0 row align-items-center justify-content-center">
+                                            <div class="col-3 col-xxl-2 g-2 mt-0 row align-items-center justify-content-center">
                                                 <div class="col-auto">
                                                     <input class="form-control form-control-sm"
                                                            type="number" required
@@ -848,7 +1020,7 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-9 col-xl-2">
+                                            <div class="col-9 col-xxl-2">
                                                 <div class="form-floating">
                                                     <select class="form-select" id="is_child_${type}_${current_num}" name="is_child_${type}_${current_num}">
                                                         <option value="">нет</option>
@@ -859,7 +1031,7 @@
                                                     <label for="is_child_${type}_${current_num}">Родительский шаблон</label>
                                                 </div>
                                             </div>
-                                            <div class="col-12 col-xl-8">
+                                            <div class="col-12 col-xxl-8">
                                                 <div class="form-floating">
                                                     <input type="text" class="form-control" id="${type}_${current_num}"
                                                            name="${type}_${current_num}"
@@ -883,6 +1055,99 @@
                 });
             $('#meaning').append(`<input class="d-none" type="number" name="based_on" value="${$('#based_on').val()}">`);
             $("#based_on").prop('disabled', true)
+        }
+
+        function addExample() {
+            if ($(`#examples`).find('> div').length > 0) {
+                var current_num = $(`#examples`).find('> div').length + 1;
+            } else {
+                var current_num = 1
+            }
+            $(`#examples`).append(
+            `<div class="col">
+                <div class="card my-2">
+                    <div class="container my-2">
+                        <div class="form-floating">
+                            <textarea class="form-control overflow-auto"
+                                      id="example_${current_num}"
+                                      name="example_${current_num}"
+                                      placeholder="Пример"
+                                      style="max-height: 300px"></textarea>
+                            <label for="example_${current_num}">Пример (в транскрипции)</label>
+                        </div>
+                    </div>
+                    <div class="container mb-2">
+                        <div class="form-floating">
+                            <textarea class="form-control overflow-auto"
+                                      id="original_script_${current_num}"
+                                      name="original_script_${current_num}"
+                                      placeholder="Пример"
+                                      style="max-height: 300px"></textarea>
+                            <label for="original_script_${current_num}">В графике</label>
+                        </div>
+                    </div>
+                    <div class="container mb-2">
+                        <div class="form-floating">
+                            <textarea class="form-control overflow-auto"
+                                      id="translation_${current_num}"
+                                      name="translation_${current_num}"
+                                      placeholder="Пример"
+                                      style="max-height: 300px"></textarea>
+                            <label for="translation_${current_num}">Перевод</label>
+                        </div>
+                    </div>
+                    <div class="container mb-2">
+                        <div class="form-floating">
+                            <textarea class="form-control overflow-auto"
+                                      id="source_${current_num}"
+                                      name="source_${current_num}"
+                                      placeholder="Пример"
+                                      style="max-height: 300px"></textarea>
+                            <label for="source_${current_num}">Источник</label>
+                        </div>
+                    </div>
+                    <div class="container mb-2">
+                        <div class="form-floating">
+                            <textarea class="form-control overflow-auto"
+                                      id="government_${current_num}"
+                                      name="government_${current_num}"
+                                      placeholder="Пример"
+                                      style="max-height: 300px"></textarea>
+                            <label for="government_${current_num}">Формула управления</label>
+                        </div>
+                    </div>
+                </div>
+            </div>`
+                );
+            $('#examples').children().last().attr("tabindex",-1).focus();
+            for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
+            autosize(document.getElementsByTagName('textarea')[i]);
+            };
+        }
+
+        function addLabels(aim, dropdown, type) {
+            if ($(`#${dropdown}`).is(':checked')) {
+                const re_ns = RegExp('\n', 'g');
+                const re_spaces = RegExp(' +$', 'gm');
+                var current_text = $(`#${aim}`).text().replaceAll(re_ns, '').replace(re_spaces, '');
+                if (current_text.match(type)) {
+                    var selected = [$(`#${dropdown}`).attr('full_name')];
+                } else {
+                    var selected = [current_text, $(`#${dropdown}`).attr('full_name')];
+                }
+                $(`#${aim}`).text(selected.join(', '));
+            } else {
+                var label = $(`#${dropdown}`).attr('full_name');
+                const re = RegExp(`(,)*( |^)${label}`.replace('\.', '\\\.'), 'g');
+                const re_spaces = RegExp('[ \n]+$', 'gm');
+                const re_beginning = RegExp('^[ \n]*, ', 'gm');
+                var new_text = $(`#${aim}`).text().replace(re, '').replace(re_spaces, '');
+                if (new_text == '') {
+                    new_text = type
+                }
+                new_text = new_text.replace(re_beginning, '')
+                $(`#${aim}`).text(new_text)
+            }
         }
     </script>
 {% endblock %}

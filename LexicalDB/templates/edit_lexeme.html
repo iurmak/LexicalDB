@@ -108,14 +108,14 @@
                             <tbody>
                                 {% for m in Meanings.query.filter_by(lex_id=lex_id).all() %}
                                     <tr>
-                                        <td><a class="link-primary" target="_blank" href="{{ url_for('edit_meaning', m_id=m.m_id) }}">{{ m.m_id }}</a></td>
+                                        <td><a class="link-primary" target="_self" href="{{ url_for('edit_meaning', m_id=m.m_id) }}">{{ m.m_id }}</a></td>
                                         <td>
                                             {% for p in Participant_relations.query.filter_by(target_id=m.m_id, type=4).all() %}
                                                 <span>{{ Participants.query.get(p.participant_id).participant }}</span><br>
                                             {% endfor %}
                                         </td>
                                         <td>что-то про структуру события</td>
-                                        <td>{{ Amend.md(Examples.query.get(m.example_id).example) }}</td>
+                                        <td>?</td>
                                         <td>{{ Amend.md(m.government) }}</td>
                                     </tr>
                                 {% endfor %}

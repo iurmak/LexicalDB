@@ -33,7 +33,7 @@
                 <tbody>
                     {% for l in lexemes %}
                         <tr>
-                            <td><a class="link-primary" target="_blank" href="{{ url_for('edit_lexeme', lex_id=l.lex_id) }}">{{ l.lex_id }}</a></td>
+                            <td><a class="link-primary" target="_self" href="{{ url_for('edit_lexeme', lex_id=l.lex_id) }}">{{ l.lex_id }}</a></td>
                             <td>
                                 {% for f in Forms.query.filter_by(lex_id=l.lex_id, type=1).limit(3).all() %}
                                     <span>{{ f.form }}</span><br>

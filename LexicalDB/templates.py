@@ -1,9 +1,9 @@
 from LexicalDB import app
 from flask import render_template, request, url_for, session, make_response, jsonify, redirect
 from LexicalDB.supplement import Emails, Amend, Check
-from LexicalDB.models import db, Users, Taxonomy, Topology, Semantic_roles, Participants, Participant_relations,\
+from LexicalDB.models import db, Users, Semantic_roles, Participants, Participant_relations,\
     Event_structure, Templates, Template_relations,\
-    Examples, Event_structure_relations
+    Examples, Event_structure_relations, Labels
 from itsdangerous import URLSafeSerializer
 from re import sub, compile
 from sqlalchemy import not_
@@ -20,10 +20,9 @@ def edit_template(templ_id):
     if request.method == 'GET':
         return render_template("edit_template.html",
                                templ_id=templ_id,
-                               Taxonomy=Taxonomy,
+                               Labels=Labels,
                                Templates=Templates,
                                Template_relations=Template_relations,
-                               Topology=Topology,
                                Semantic_roles=Semantic_roles,
                                Participants=Participants,
                                Participant_relations=Participant_relations,
@@ -197,9 +196,10 @@ def edit_template(templ_id):
                     db.session.add(
                         Event_structure_relations(
                             ese_id=item.ese_id,
-                            target_id=templ_id),
+                            target_id=templ_id,
                             type=1
                         )
+                    )
                 db.session.add(
                     Template_relations(
                         templ_id=templ_id,
@@ -247,9 +247,8 @@ def new_template():
 
     if request.method == 'GET':
         return render_template("new_template.html",
-                               Taxonomy=Taxonomy,
+                               Labels=Labels,
                                Templates=Templates,
-                               Topology=Topology,
                                Semantic_roles=Semantic_roles,
                                Participants=Participants,
                                Event_structure=Event_structure,
@@ -511,9 +510,24 @@ def editing_autocomplete():
             else:
                 response = jsonify(1)
         elif type == 'existent_participant':
-            taxonomy_ids = [i.target_id for i in Participant_relations.query.filter_by(participant_id=input, type=1).all()]
+            p = input
+            taxonomy_ids = [i.target_id for i in Participant_relations.query.filter_by(participant_id=p, type=1).all()]
+            if Check.labels(input, 'tax', tooltips=False):
+                tax_names = Check.labels(input, 'tax', tooltips=False)
+            else:
+                tax_names = 'Таксономия'
             topology_ids = [i.target_id for i in
-                            Participant_relations.query.filter_by(participant_id=input, type=2).all()]
+                            Participant_relations.query.filter_by(participant_id=p, type=2).all()]
+            if Check.labels(input, 'top', tooltips=False):
+                top_names = Check.labels(input, 'top', tooltips=False)
+            else:
+                top_names = 'Топология'
+            mereology_ids = [i.target_id for i in
+                             Participant_relations.query.filter_by(participant_id=p, type=5).all()]
+            if Check.labels(input, 'mer', tooltips=False):
+                mer_names = Check.labels(input, 'mer', tooltips=False)
+            else:
+                mer_names = 'Мереология'
             if Participants.query.get(input).sr_id:
                 sr = Semantic_roles.query.get(Participants.query.get(input).sr_id).sr
             else:
@@ -527,6 +541,10 @@ def editing_autocomplete():
                 'sr': sr,
                 'tax': taxonomy_ids,
                 'top': topology_ids,
+                'mer': mereology_ids,
+                'tax_names': tax_names,
+                'top_names': top_names,
+                'mer_names': mer_names,
                 'other': other,
                 'status': Participants.query.get(input).status,
                 'parents': [p.participant_id for p in Participant_relations.query.filter_by(target_id=input, type=3).all()]
@@ -535,8 +553,22 @@ def editing_autocomplete():
             participants = []
             for p in [i.target_id for i in Template_relations.query.filter_by(templ_id=input, type=9).all()]:
                 taxonomy_ids = [i.target_id for i in Participant_relations.query.filter_by(participant_id=p, type=1).all()]
+                if Check.labels(input, 'tax', tooltips=False):
+                    tax_names = Check.labels(input, 'tax', tooltips=False)
+                else:
+                    tax_names = 'Таксономия'
                 topology_ids = [i.target_id for i in
                                 Participant_relations.query.filter_by(participant_id=p, type=2).all()]
+                if Check.labels(input, 'top', tooltips=False):
+                    top_names = Check.labels(input, 'top', tooltips=False)
+                else:
+                    top_names = 'Топология'
+                mereology_ids = [i.target_id for i in
+                                Participant_relations.query.filter_by(participant_id=p, type=5).all()]
+                if Check.labels(input, 'mer', tooltips=False):
+                    mer_names = Check.labels(input, 'mer', tooltips=False)
+                else:
+                    mer_names = 'Мереология'
                 if Participants.query.get(p).sr_id:
                     sr = Semantic_roles.query.get(Participants.query.get(p).sr_id).sr
                 else:
@@ -551,6 +583,10 @@ def editing_autocomplete():
                         'sr': sr,
                         'tax': taxonomy_ids,
                         'top': topology_ids,
+                        'mer': mereology_ids,
+                        'tax_names': tax_names,
+                        'top_names': top_names,
+                        'mer_names': mer_names,
                         'other': other,
                         'status': Participants.query.get(p).status,
                         'parents': [part.participant_id for part in

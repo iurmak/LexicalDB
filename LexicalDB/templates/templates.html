@@ -36,7 +36,7 @@
                     {% for template in templates %}
                             <tr>
                                 <td>{{ template.templ_id }}</td>
-                                <td><a class="link-primary" target="_blank" href="{{ url_for('edit_template', templ_id=template.templ_id) }}">{{ template.templ }}</a></td>
+                                <td><a class="link-primary" target="_self" href="{{ url_for('edit_template', templ_id=template.templ_id) }}">{{ template.templ }}</a></td>
                                 <td>
                                     {% for t in Template_relations.query.filter_by(target_id=template.templ_id, type=1).all() %}
                                         <span>{{ Templates.query.get(t.templ_id).templ }}</span><br>
