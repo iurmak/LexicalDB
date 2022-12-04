@@ -289,57 +289,62 @@
             </div>
             <div class="container mb-2 row align-items-center justify-content-around overflow-auto collapse show" style="max-height: 60vh;" id="collapse_examples">
                 <div class="row row-cols-1 g-2" id="examples">
-                    {% for e_id in Check.split(m.example_ids, ',') %}
-                        <div class="col">
+                    {% for e in Example_to_meaning.query.filter_by(m_id=m.m_id) %}
+                        <div class="col" id="existing_example_column_{{ e.example_id }}">
                             <div class="card my-2">
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteExample(existing_example_column_{{ e.example_id }})">
+                                        Удалить
+                                    </button>
+                                </div>
                                 <div class="container my-2">
                                     <div class="form-floating">
                                         <textarea class="form-control overflow-auto"
-                                                  id="existing_example_{{ e_id }}"
-                                                  name="existing_example_{{ e_id }}"
+                                                  id="existing_government_{{ e.example_id }}"
+                                                  name="existing_government_{{ e.example_id }}"
                                                   placeholder="Пример"
-                                                  style="max-height: 300px">{{ Examples.query.get(e_id).example }}</textarea>
-                                        <label for="existing_example_{{ e_id }}">Пример (в транскрипции)</label>
+                                                  style="max-height: 300px">{{ Examples.query.get(e.example_id).government }}</textarea>
+                                        <label for="existing_government_{{ e.example_id }}">Формула управления</label>
                                     </div>
                                 </div>
                                 <div class="container mb-2">
                                     <div class="form-floating">
                                         <textarea class="form-control overflow-auto"
-                                                  id="existing_original_script_{{ e_id }}"
-                                                  name="existing_original_script_{{ e_id }}"
+                                                  id="existing_example_{{ e.example_id }}"
+                                                  name="existing_example_{{ e.example_id }}"
                                                   placeholder="Пример"
-                                                  style="max-height: 300px">{{ Examples.query.get(e_id).original_script }}</textarea>
-                                        <label for="existing_original_script_{{ e_id }}">В графике</label>
+                                                  style="max-height: 300px">{{ Examples.query.get(e.example_id).example }}</textarea>
+                                        <label for="existing_example_{{ e.example_id }}">Пример (в транскрипции)</label>
                                     </div>
                                 </div>
                                 <div class="container mb-2">
                                     <div class="form-floating">
                                         <textarea class="form-control overflow-auto"
-                                                  id="existing_translation_{{ e_id }}"
-                                                  name="existing_translation_{{ e_id }}"
+                                                  id="existing_original_script_{{ e.example_id }}"
+                                                  name="existing_original_script_{{ e.example_id }}"
                                                   placeholder="Пример"
-                                                  style="max-height: 300px">{{ Examples.query.get(e_id).translation }}</textarea>
-                                        <label for="existing_translation_{{ e_id }}">Перевод</label>
+                                                  style="max-height: 300px">{{ Examples.query.get(e.example_id).original_script }}</textarea>
+                                        <label for="existing_original_script_{{ e.example_id }}">В графике</label>
                                     </div>
                                 </div>
                                 <div class="container mb-2">
                                     <div class="form-floating">
                                         <textarea class="form-control overflow-auto"
-                                                  id="existing_source_{{ e_id }}"
-                                                  name="existing_source_{{ e_id }}"
+                                                  id="existing_translation_{{ e.example_id }}"
+                                                  name="existing_translation_{{ e.example_id }}"
                                                   placeholder="Пример"
-                                                  style="max-height: 300px">{{ Examples.query.get(e_id).source }}</textarea>
-                                        <label for="existing_source_{{ e_id }}">Источник</label>
+                                                  style="max-height: 300px">{{ Examples.query.get(e.example_id).translation }}</textarea>
+                                        <label for="existing_translation_{{ e.example_id }}">Перевод</label>
                                     </div>
                                 </div>
                                 <div class="container mb-2">
                                     <div class="form-floating">
                                         <textarea class="form-control overflow-auto"
-                                                  id="government_{{ e_id }}"
-                                                  name="government_{{ e_id }}"
+                                                  id="existing_source_{{ e.example_id }}"
+                                                  name="existing_source_{{ e.example_id }}"
                                                   placeholder="Пример"
-                                                  style="max-height: 300px">{{ Examples.query.get(e_id).government }}</textarea>
-                                        <label for="government_{{ e_id }}">Формула управления</label>
+                                                  style="max-height: 300px">{{ Examples.query.get(e.example_id).source }}</textarea>
+                                        <label for="existing_source_{{ e.example_id }}">Источник</label>
                                     </div>
                                 </div>
                             </div>
@@ -1208,8 +1213,11 @@
             }
             $(`#${id}`).append(
             `
-            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_column_${type}_${current_num}">
                 <div class="col-3 col-xxl-2 g-2 mt-0 row align-items-center justify-content-center">
+                    <div class="col-auto">
+                        <span type="button" href="();" onclick="ese_column_${type}_${current_num}.remove()">❌</span>
+                    </div>
                     <div class="col-auto">
                         <input class="form-control form-control-sm"
                                type="number" required
@@ -1258,6 +1266,16 @@
                 )
             };
             participant.remove()
+        };
+
+        function deleteExample(example) {
+            if (example.id.includes('existent')) {
+                var e_id = example.id.split('_').slice(-1);
+                $('#meaning').append(
+                    `<input class="d-none" type="text" name="delete_e_${e_id}" value="${e_id}">`
+                )
+            };
+            example.remove()
         };
         
         function deleteESE(ese) {
@@ -1340,9 +1358,22 @@
                 var current_num = 1
             }
             $(`#examples`).append(
-            `<div class="col">
+            `<div class="col" id="example_column_${current_num}">
                 <div class="card my-2">
+                    <div class="container my-2 text-danger text-center">
+                        <span type="button" href="();" onclick="example_column_${current_num}.remove()">Удалить</span>
+                    </div>
                     <div class="container my-2">
+                        <div class="form-floating">
+                            <textarea class="form-control overflow-auto"
+                                      id="government_${current_num}"
+                                      name="government_${current_num}"
+                                      placeholder="Пример"
+                                      style="max-height: 300px"></textarea>
+                            <label for="government_${current_num}">Формула управления</label>
+                        </div>
+                    </div>
+                    <div class="container mb-2">
                         <div class="form-floating">
                             <textarea class="form-control overflow-auto"
                                       id="example_${current_num}"
@@ -1355,11 +1386,11 @@
                     <div class="container mb-2">
                         <div class="form-floating">
                             <textarea class="form-control overflow-auto"
-                                      id="existing_original_script_{{ e_id }}"
-                                      name="existing_original_script_{{ e_id }}"
+                                      id="original_script_current_num"
+                                      name="original_script_${current_num}"
                                       placeholder="Пример"
                                       style="max-height: 300px"></textarea>
-                            <label for="existing_original_script_{{ e_id }}">В графике</label>
+                            <label for="original_script_${current_num}">В графике</label>
                         </div>
                     </div>
                     <div class="container mb-2">
@@ -1380,16 +1411,6 @@
                                       placeholder="Пример"
                                       style="max-height: 300px"></textarea>
                             <label for="source_${current_num}">Источник</label>
-                        </div>
-                    </div>
-                    <div class="container mb-2">
-                        <div class="form-floating">
-                            <textarea class="form-control overflow-auto"
-                                      id="government_${current_num}"
-                                      name="government_${current_num}"
-                                      placeholder="Пример"
-                                      style="max-height: 300px"></textarea>
-                            <label for="government_${current_num}">Формула управления</label>
                         </div>
                     </div>
                 </div>

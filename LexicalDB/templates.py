@@ -61,14 +61,30 @@ def edit_template(templ_id):
                 )
                 db.session.commit()
 
+        all_new_mereology = [request.form.get(i) for i in request.form if
+                             i.startswith('new_mer_') and no_spaces_at_edges.sub('', request.form.get(i))]
+        for new_mer in all_new_mereology:
+            for mer in new_mer.split(','):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer),
+                                              type=1).first() and no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Labels(
+                            l=no_spaces_at_edges.sub('', mer),
+                            type=1
+                        )
+                    )
+                    db.session.commit()
+
         all_new_taxonomy = [request.form.get(i) for i in request.form if
                             i.startswith('new_tax_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_tax in all_new_taxonomy:
             for tax in new_tax.split(','):
-                if not Taxonomy.query.filter_by(tax=tax).first() and no_spaces_at_edges.sub('', tax):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax),
+                                              type=2).first() and no_spaces_at_edges.sub('', tax):
                     db.session.add(
-                        Taxonomy(
-                            tax=no_spaces_at_edges.sub('', tax)
+                        Labels(
+                            l=no_spaces_at_edges.sub('', tax),
+                            type=2
                         )
                     )
                     db.session.commit()
@@ -77,10 +93,12 @@ def edit_template(templ_id):
                             i.startswith('new_top_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_top in all_new_topology:
             for top in new_top.split(','):
-                if not Topology.query.filter_by(top=top).first() and no_spaces_at_edges.sub('', top):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', top),
+                                              type=3).first() and no_spaces_at_edges.sub('', top):
                     db.session.add(
-                        Topology(
-                            top=no_spaces_at_edges.sub('', top)
+                        Labels(
+                            l=no_spaces_at_edges.sub('', top),
+                            type=3
                         )
                     )
                     db.session.commit()
@@ -136,7 +154,7 @@ def edit_template(templ_id):
                     db.session.add(
                         Participant_relations(
                             participant_id=participant.participant_id,
-                            target_id=Taxonomy.query.filter_by(tax=no_spaces_at_edges.sub('', tax)).first().tax_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax), type=2).first().l_id,
                             type=1
                         )
                     )
@@ -156,12 +174,31 @@ def edit_template(templ_id):
                     db.session.add(
                         Participant_relations(
                             participant_id=participant.participant_id,
-                            target_id=Topology.query.filter_by(top=no_spaces_at_edges.sub('', top)).first().top_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', top), type=3).first().l_id,
                             type=2
                         )
                     )
                     db.session.commit()
-        Examples.query.filter_by(example_id=Template_relations.query.filter_by(templ_id=templ_id, type=3).first().target_id).update({'example': request.form.get('example')})
+
+            for mer in [i for i in request.form if i.startswith(f'mer_{p}_') and request.form.get(i)]:
+                db.session.add(
+                    Participant_relations(
+                        participant_id=participant.participant_id,
+                        target_id=int(mer.split('_')[-1]),
+                        type=5
+                    )
+                )
+                db.session.commit()
+            for mer in request.form.get(f'new_mer_{p}').split(','):
+                if no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Participant_relations(
+                            participant_id=participant.participant_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer), type=1).first().l_id,
+                            type=5
+                        )
+                    )
+                    db.session.commit()
         db.session.commit()
 
         ese_to_delete = [request.form.get(i) for i in request.form if
@@ -180,7 +217,9 @@ def edit_template(templ_id):
                       part.startswith(f'{event_structure_part[-1]}_') and request.form.get(part)]:
                 item = Event_structure(ese=no_spaces_at_edges.sub('', request.form.get(i)),
                                        rank=request.form.get(f'rank_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                                       type=event_structure_part[0]
+                                       type=event_structure_part[0],
+                                       status=request.form.get(
+                                           f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}')
                                        )
                 db.session.add(item)
                 db.session.commit()
@@ -213,7 +252,9 @@ def edit_template(templ_id):
                 i_id = int(i.split('_')[-1])
                 Event_structure.query.filter_by(ese_id=i_id, type=event_structure_part[0]).update(
                     {'ese': no_spaces_at_edges.sub('', request.form.get(i)),
-                     'rank': request.form.get(f'rank_existent_{event_structure_part[-1]}_{i.split("_")[-1]}')}
+                     'rank': request.form.get(f'rank_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
+                     'status': request.form.get(f'status_ese_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
+                     }
                 )
                 db.session.commit()
                 Event_structure_relations.query.filter_by(ese_id=i_id, type=1).delete()
@@ -286,14 +327,28 @@ def new_template():
                 )
                 db.session.commit()
 
+        all_new_mereology = [request.form.get(i) for i in request.form if
+                            i.startswith('new_mer_') and no_spaces_at_edges.sub('', request.form.get(i))]
+        for new_mer in all_new_mereology:
+            for mer in new_mer.split(','):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer), type=1).first() and no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Labels(
+                            l=no_spaces_at_edges.sub('', mer),
+                            type=1
+                        )
+                    )
+                    db.session.commit()
+
         all_new_taxonomy = [request.form.get(i) for i in request.form if
                             i.startswith('new_tax_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_tax in all_new_taxonomy:
             for tax in new_tax.split(','):
-                if not Taxonomy.query.filter_by(tax=tax).first() and no_spaces_at_edges.sub('', tax):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax), type=2).first() and no_spaces_at_edges.sub('', tax):
                     db.session.add(
-                        Taxonomy(
-                            tax=no_spaces_at_edges.sub('', tax)
+                        Labels(
+                            l=no_spaces_at_edges.sub('', tax),
+                            type=2
                         )
                     )
                     db.session.commit()
@@ -302,10 +357,11 @@ def new_template():
                             i.startswith('new_top_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_top in all_new_topology:
             for top in new_top.split(','):
-                if not Topology.query.filter_by(top=top).first() and no_spaces_at_edges.sub('', top):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', top), type=3).first() and no_spaces_at_edges.sub('', top):
                     db.session.add(
-                        Topology(
-                            top=no_spaces_at_edges.sub('', top)
+                        Labels(
+                            l=no_spaces_at_edges.sub('', top),
+                            type=3
                         )
                     )
                     db.session.commit()
@@ -321,7 +377,8 @@ def new_template():
                 participant=no_spaces_at_edges.sub('', request.form.get(f'label_{p}')),
                 sr_id=sr_id,
                 other=no_spaces_at_edges.sub('', request.form.get(f'other_{p}')),
-                status=request.form.get(f'status_{p}')
+                status=request.form.get(f'status_{p}'),
+                type=1
             )
             db.session.add(participant)
             db.session.commit()
@@ -356,7 +413,7 @@ def new_template():
                     db.session.add(
                         Participant_relations(
                             participant_id=participant.participant_id,
-                            target_id=Taxonomy.query.filter_by(tax=no_spaces_at_edges.sub('', tax)).first().tax_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax), type=2).first().l_id,
                             type=1
                         )
                     )
@@ -376,24 +433,31 @@ def new_template():
                     db.session.add(
                         Participant_relations(
                             participant_id=participant.participant_id,
-                            target_id=Topology.query.filter_by(top=no_spaces_at_edges.sub('', top)).first().top_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', top), type=3).first().l_id,
                             type=2
                         )
                     )
                     db.session.commit()
-        example = Examples(
-                example=request.form.get('example')
-            )
-        db.session.add(example)
-        db.session.commit()
-        db.session.add(
-            Template_relations(
-                templ_id=template.templ_id,
-                target_id=example.example_id,
-                type=3
-            )
-        )
-        db.session.commit()
+
+            for mer in [i for i in request.form if i.startswith(f'mer_{p}_') and request.form.get(i)]:
+                db.session.add(
+                    Participant_relations(
+                        participant_id=participant.participant_id,
+                        target_id=int(mer.split('_')[-1]),
+                        type=5
+                    )
+                )
+                db.session.commit()
+            for mer in request.form.get(f'new_mer_{p}').split(','):
+                if no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Participant_relations(
+                            participant_id=participant.participant_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer), type=1).first().l_id,
+                            type=5
+                        )
+                    )
+                    db.session.commit()
 
         event_structure = [(1, 'I'), (2, 'B'),
                            (3, 'P'), (4, 'F'),
@@ -403,7 +467,8 @@ def new_template():
                       part.startswith(f'{event_structure_part[-1]}_') and request.form.get(part)]:
                 item = Event_structure(ese=no_spaces_at_edges.sub('', request.form.get(i)),
                                        rank=request.form.get(f'rank_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                                       type=event_structure_part[0]
+                                       type=event_structure_part[0],
+                                       status=request.form.get(f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}')
                                        )
                 db.session.add(item)
                 db.session.commit()

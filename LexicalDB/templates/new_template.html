@@ -75,213 +75,10 @@
             </div>
             <div class="collapse show container overflow-auto" style="max-height: 60vh;" id="collapse_participants">
                 <div class="row row-cols-1 row-cols-lg-3 g-2" id="participants">
-                    <div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="participant_1">
-                        <div class="col-auto row align-items-center justify-content-center g-2">
-                            <div class="col-auto">
-                                <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(participant_1)">
-                                    Удалить
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="label_1"
-                                       name="label_1"
-                                       placeholder="Введите текст"
-                                       oninput="checkLabelAvailability(this, this.value)"
-                                       required
-                                >
-                                <label for="label_1">Ярлык</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="sr_1"
-                                       name="sr_1"
-                                       placeholder="Введите текст"
-                                       list="sr_list"
-                                       oninput="suggestions('sr', sr_1.value)"
-                                >
-                                <label for="sr_1">Семантическая роль</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="col-12 align-items-center text-center mb-1">
-                                <a class="text-primary h5"
-                                   href="javascript:;"
-                                   role="button"
-                                   data-bs-toggle="dropdown"
-                                   data-bs-auto-close="outside"
-                                   aria-expanded="false"
-                                   style="text-decoration-line: none; font-variant: small-caps"
-                                   id="mer_ls_1"
-                                >
-                                    <span>Мереология</span>
-                                </a>
-                                <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                    {% for l in Labels.query.filter_by(type=1).all() %}
-                                        <li>
-                                            <div class="form-check">
-                                                <input class="form-check-input"
-                                                       type="checkbox"
-                                                       value="{{ l.l_id }}"
-                                                       id="mer_1_{{ l.l_id }}"
-                                                       name="mer_1_{{ l.l_id }}"
-                                                       full_name="{{ l.l }}"
-                                                       onclick="addLabels('mer_ls_1', 'mer_1_{{ l.l_id }}', 'Мереология')"
-                                                >
-                                                <label class="form-check-label"
-                                                       for="mer_1_{{ l.l_id }}"
-                                                       style="font-variant: small-caps"
-                                                >
-                                                    {{ l.l }}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="new_mer_1"
-                                       name="new_mer_1"
-                                       placeholder="Введите текст"
-                                >
-                                <label for="new_mer_1">Введите новые тэги через запятую</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="col-12 align-items-center text-center mb-1">
-                                <a class="text-primary h5"
-                                   href="javascript:;"
-                                   role="button"
-                                   data-bs-toggle="dropdown"
-                                   data-bs-auto-close="outside"
-                                   aria-expanded="false"
-                                   style="text-decoration-line: none; font-variant: small-caps"
-                                   id="tax_ls_1"
-                                >
-                                    <span>Таксономия</span>
-                                </a>
-                                <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                    {% for l in Labels.query.filter_by(type=2).all() %}
-                                        <li>
-                                            <div class="form-check">
-                                                <input class="form-check-input"
-                                                       type="checkbox"
-                                                       value="{{ l.l_id }}"
-                                                       id="tax_1_{{ l.l_id }}"
-                                                       name="tax_1_{{ l.l_id }}"
-                                                       full_name="{{ l.l }}"
-                                                       onclick="addLabels('tax_ls_1', 'tax_1_{{ l.l_id }}', 'Таксономия')"
-                                                >
-                                                <label class="form-check-label"
-                                                       for="tax_1_{{ l.l_id }}"
-                                                       style="font-variant: small-caps"
-                                                >
-                                                    {{ l.l }}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="new_tax_1"
-                                       name="new_tax_1"
-                                       placeholder="Введите текст"
-                                >
-                                <label for="new_tax_1">Введите новые тэги через запятую</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="col-12 align-items-center text-center mb-1">
-                                <a class="text-primary h5"
-                                   href="javascript:;"
-                                   role="button"
-                                   data-bs-toggle="dropdown"
-                                   data-bs-auto-close="outside"
-                                   aria-expanded="false"
-                                   style="text-decoration-line: none; font-variant: small-caps"
-                                   id="top_ls_1"
-                                >
-                                    <span>Топология</span>
-                                </a>
-                                <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                    {% for l in Labels.query.filter_by(type=3).all() %}
-                                        <li>
-                                            <div class="form-check">
-                                                <input class="form-check-input"
-                                                       type="checkbox"
-                                                       value="{{ l.l_id }}"
-                                                       id="top_1_{{ l.l_id }}"
-                                                       name="top_1_{{ l.l_id }}"
-                                                       full_name="{{ l.l }}"
-                                                       onclick="addLabels('top_ls_1', 'top_1_{{ l.l_id }}', 'Топология')"
-                                                >
-                                                <label class="form-check-label"
-                                                       for="top_1_{{ l.l_id }}"
-                                                       style="font-variant: small-caps"
-                                                >
-                                                    {{ l.l }}
-                                                </label>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="new_top_1"
-                                       name="new_top_1"
-                                       placeholder="Введите текст"
-                                >
-                                <label for="new_top_1">Введите новые тэги через запятую</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input type="text" class="form-control" id="other_1"
-                                       name="other_1"
-                                       placeholder="Введите текст"
-                                >
-                                <label for="other_1">Другое</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <select class="form-select" id="status_1" name="status_1">
-                                    <option selected value="1">ядерный</option>
-                                    <option value="2">периферийный</option>
-                                </select>
-                                <label for="status_1">Этот участник</label>
-                            </div>
-                        </div>
-                        <div class="col mb-2">
-                            <div>
-                                <label for="is_child_1" class="form-label">Родительский участник</label>
-                                <select class="form-select" size="4" id="is_child_1" name="is_child_1" multiple>
-                                    <option value="">отсутствует</option>
-                                    {% for p in Participants.query.filter_by(type=1).all() %}
-                                        <option value="{{ p.participant_id }}">
-                                            {{ p.participant }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
             <div class="container my-2">
-                <div class="form-floating">
-                    <textarea class="form-control overflow-auto"
-                          id="example"
-                          name="example"
-                          placeholder="Введите текст примера"
-                          style="max-height: 300px"></textarea>
-                    <label for="example">Пример</label>
-                </div>
-            </div>
-            <div class="container mb-2">
                 <div class="row g-2 mb-2 align-items-center justify-content-start">
                     <div class="col-auto">
                         <span class="form-label h5">Структура события</span>
@@ -427,7 +224,7 @@
                                 <span>Мереология</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for l in Labels.query.filter_by(type=1).all() %}
+                                {% for l in Labels.query.filter_by(type=1).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
@@ -471,7 +268,7 @@
                                 <span>Таксономия</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for l in Labels.query.filter_by(type=2).all() %}
+                                {% for l in Labels.query.filter_by(type=2).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
@@ -515,7 +312,7 @@
                                 <span>Топология</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for l in Labels.query.filter_by(type=3).all() %}
+                                {% for l in Labels.query.filter_by(type=3).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
@@ -835,24 +632,40 @@
             }
             if (id == 'Implication') {
                 var type = 'Impl';
+                var assert_presuppose = ``
             } else {
                 var type = Array.from(id)[0];
+                var assert_presuppose =
+            `
+            <div class="col-auto">
+                <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}}" name="status_ese_${type}_${current_num}">
+                    <option value="1">ассерция</option>
+                    <option value="2" selected>пресуппозиция</option>
+                </select>
+            </div>
+            `
             }
             $(`#${id}`).append(
             `
-            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
-                <div class="col-3 col-xl-1 text-center">
-                    <input class="form-control"
-                           type="number" required
-                           value="${current_num}"
-                           id="rank_${type}_${current_num}"
-                           name="rank_${type}_${current_num}"
-                           >
+            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_column_${type}_${current_num}">
+                <div class="col-3 col-xxl-2 g-2 mt-0 row align-items-center justify-content-center">
+                    <div class="col-auto">
+                        <span type="button" href="();" onclick="ese_column_${type}_${current_num}.remove()">❌</span>
+                    </div>
+                    <div class="col-auto">
+                        <input class="form-control form-control-sm"
+                               type="number" required
+                               value="${current_num}"
+                               id="rank_${type}_${current_num}"
+                               name="rank_${type}_${current_num}"
+                               >
+                    </div>
+                    ${assert_presuppose}
                 </div>
-                <div class="col-9 col-xl-3">
+                <div class="col-9 col-xxl-2">
                     <div class="form-floating">
                         <select class="form-select" id="is_child_${type}_${current_num}}" name="is_child_${type}_${current_num}">
-                            <option value="">текущий</option>
+                            <option value="">нет</option>
                             {% for t in Templates.query.all() %}
                                 <option value="{{t.templ_id}}">{{t.templ}}</option>
                             {% endfor %}

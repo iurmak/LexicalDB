@@ -3,7 +3,7 @@ from flask import render_template, request, url_for, session, make_response, jso
 from LexicalDB.supplement import Emails, Amend, Check
 from LexicalDB.models import db, Users, Semantic_roles, Participants, Participant_relations,\
     Event_structure, Templates, Template_relations, Lexemes, Lexeme_relations, Forms, Parts_of_speech, Languages,\
-    Examples, Event_structure_relations, Meanings, Labels
+    Examples, Event_structure_relations, Meanings, Labels, Example_to_meaning
 from itsdangerous import URLSafeSerializer
 from re import sub, compile
 from sqlalchemy import not_
@@ -82,12 +82,12 @@ def edit_lexeme(lex_id):
                 )
                 db.session.commit()
 
-        for f in [form for form in request.form if form.startswith(f'existent_form_')]:
-            Forms.query.filter_by(form_id=int(f.split('_')[-1])).update(
-                {'form': request.form.get(int(f.split('_')[-1]))}
+        for f in [form for form in request.form if form.startswith(f'existent_')]:
+            Forms.query.filter_by(form_id=int(f.split('_')[-1]), type=1).update(
+                {'form': request.form.get(f"existent_main_form_{f.split('_')[-1]}")}
             )
-            Forms.query.filter_by(parent_id=int(form.split('_')[-1]), type=2).update(
-                {'form': request.form.get(int(f.split('_')[-1]))}
+            Forms.query.filter_by(parent_id=int(f.split('_')[-1]), type=2).update(
+                {'form': request.form.get(f"existent_script_form_{f.split('_')[-1]}")}
             )
             db.session.commit()
         return Amend.flash('Изменения сохранены.', 'success', url_for('edit_lexeme', lex_id=lex_id))
@@ -103,12 +103,6 @@ def new_lexeme():
 
     if request.method == 'GET':
         return render_template("new_lexeme.html",
-                               Taxonomy=Taxonomy,
-                               Templates=Templates,
-                               Topology=Topology,
-                               Semantic_roles=Semantic_roles,
-                               Participants=Participants,
-                               Event_structure=Event_structure,
                                Parts_of_speech=Parts_of_speech,
                                Languages=Languages
                                )
@@ -137,23 +131,22 @@ def new_lexeme():
                      i.startswith('main_form_') and request.form.get(i)]
         for f in all_forms:
             if no_spaces_at_edges.sub('', request.form.get(f)):
-                db.session.add(
-                    Forms(
+                form = Forms(
                         form=no_spaces_at_edges.sub('', request.form.get(f)),
                         lex_id=lexeme.lex_id,
                         type=1
                     )
-                )
+                db.session.add(form)
                 db.session.commit()
-            if no_spaces_at_edges.sub('', request.form.get(f'script_form_{f.split("_")[-1]}')):
-                db.session.add(
-                    Forms(
-                        form=no_spaces_at_edges.sub('', request.form.get(f'script_form_{f.split("_")[-1]}')),
-                        lex_id=lexeme.lex_id,
-                        type=2
-                    )
+            db.session.add(
+                Forms(
+                    form=no_spaces_at_edges.sub('', request.form.get(f'script_form_{f.split("_")[-1]}')),
+                    lex_id=lexeme.lex_id,
+                    parent_id=form.form_id,
+                    type=2
                 )
-                db.session.commit()
+            )
+            db.session.commit()
         return Amend.flash('Лексема добавлена.', 'success', url_for('edit_lexeme', lex_id=lexeme.lex_id))
 
 @app.route('/lexemes', methods=['POST', 'GET'])
@@ -416,7 +409,8 @@ def edit_meaning(m_id):
                                Amend=Amend,
                                Check=Check,
                                not_=not_,
-                               Forms=Forms
+                               Forms=Forms,
+                               Example_to_meaning=Example_to_meaning
                                )
 
     elif request.method == 'POST':
@@ -426,15 +420,31 @@ def edit_meaning(m_id):
             based_on = int(request.form.get('based_on'))
         else:
             based_on = None
-        Examples.query.filter_by(example_id=m.example_id).update(
-            {'example': no_spaces_at_edges.sub('', request.form.get('example', '')),
-             'original_script': no_spaces_at_edges.sub('', request.form.get('original_script', '')),
-             'translation': no_spaces_at_edges.sub('', request.form.get('translation', '')),
-             'source': no_spaces_at_edges.sub('', request.form.get('source', ''))}
-        )
-        Meanings.query.filter_by(m_id=m_id).update(
-            {'government': no_spaces_at_edges.sub('', request.form.get('government'))}
-        )
+
+        for e in [i for i in request.form if i.startswith('existing_example')]:
+            e_id = e.split('_')[-1]
+            Examples.query.filter_by(example_id=m.example_id).update(
+                {'example': no_spaces_at_edges.sub('', request.form.get(f'existing_example_{e_id}', '')),
+                 'original_script': no_spaces_at_edges.sub('', request.form.get(f'existing_original_script_{e_id}', '')),
+                 'translation': no_spaces_at_edges.sub('', request.form.get(f'existing_translation_{e_id}', '')),
+                 'source': no_spaces_at_edges.sub('', request.form.get(f'existing_source_{e_id}', '')),
+                 'government': no_spaces_at_edges.sub('', request.form.get(f'existing_government_{e_id}', ''))
+                 }
+            )
+
+        for e in [i for i in request.form if i.startswith('example_')]:
+            e_id = e.split('_')[-1]
+            example = Examples(
+                example = no_spaces_at_edges.sub('', request.form.get(f'example_{e_id}', '')),
+                original_script = no_spaces_at_edges.sub('', request.form.get(f'original_script_{e_id}', '')),
+                translation = no_spaces_at_edges.sub('', request.form.get(f'translation_{e_id}', '')),
+                source = no_spaces_at_edges.sub('', request.form.get(f'source_{e_id}', '')),
+                government = no_spaces_at_edges.sub('', request.form.get(f'government_{e_id}', ''))
+            )
+            db.session.add(example)
+            db.session.commit()
+            db.session.add(Example_to_meaning(example_id=example.example_id, m_id=m.m_id))
+            db.session.commit()
         Template_relations.query.filter_by(target_id=m.m_id, type=4).update(
             {'templ_id': based_on}
         )
@@ -455,7 +465,7 @@ def edit_meaning(m_id):
                             i.startswith('new_tax_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_tax in all_new_taxonomy:
             for tax in new_tax.split(','):
-                if not Taxonomy.query.filter_by(tax=tax).first() and no_spaces_at_edges.sub('', tax):
+                if not Labels.query.filter_by(type=2).first() and no_spaces_at_edges.sub('', tax):
                     db.session.add(
                         Taxonomy(
                             tax=no_spaces_at_edges.sub('', tax)
@@ -477,9 +487,15 @@ def edit_meaning(m_id):
 
         participants_to_delete = [request.form.get(i) for i in request.form if
                                   i.startswith('delete_p_') and request.form.get(i)]
+        examples_to_delete = [request.form.get(i) for i in request.form if
+                                  i.startswith('delete_e_') and request.form.get(i)]
         for p in participants_to_delete:
             Participants.query.filter_by(participant_id=p).delete()
             Participant_relations.query.filter_by(participant_id=p).delete()
+
+        for e in examples_to_delete:
+            Examples.query.filter_by(example_id=e).delete()
+            Example_to_meaning.query.filter_by(example_id=e).delete()
 
         all_participants = [i.split('_')[-1] for i in request.form if i.startswith('label_') and request.form.get(i)]
         for p in all_participants:

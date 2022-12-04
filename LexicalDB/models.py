@@ -44,8 +44,8 @@ class Participants(db.Model):
     participant = db.Column(db.Text, unique=False)
     sr_id = db.Column(db.Integer, db.ForeignKey(Semantic_roles.sr_id))
     other = db.Column(db.Text, unique=True)
-    type = db.Column(db.Integer) #1 -- core, 2 -- peripheral
-    status = db.Column(db.Integer, nullable=False, default=1)  # 1 -- from template, 2 -- from meanings
+    status = db.Column(db.Integer) #1 -- core, 2 -- peripheral
+    type = db.Column(db.Integer, nullable=False, default=1)  # 1 -- from template, 2 -- from meanings
 
 class Participant_relations(db.Model):
     participant_id = db.Column(db.Integer, db.ForeignKey(Participants.participant_id))
@@ -106,5 +106,8 @@ class Forms(db.Model):
 class Meanings(db.Model):
     m_id = db.Column(db.Integer, primary_key=True)
     lex_id = db.Column(db.Integer, db.ForeignKey(Lexemes.lex_id))
-    example_ids = db.Column(db.Text)
     status = db.Column(db.Integer, nullable=False, default=1) # 1 -- not shown, 2 -- shown
+
+class Example_to_meaning(db.Model):
+    example_id = db.Column(db.Integer, db.ForeignKey(Examples.example_id), primary_key=True)
+    m_id = db.Column(db.Integer, db.ForeignKey(Meanings.m_id), primary_key=False)
