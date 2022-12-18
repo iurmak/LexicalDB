@@ -48,8 +48,9 @@ class Participants(db.Model):
     type = db.Column(db.Integer, nullable=False, default=1)  # 1 -- from template, 2 -- from meanings
 
 class Participant_relations(db.Model):
+    null_id = db.Column(db.Integer, primary_key=True)
     participant_id = db.Column(db.Integer, db.ForeignKey(Participants.participant_id))
-    target_id = db.Column(db.Integer, unique=False, primary_key=True)
+    target_id = db.Column(db.Integer, unique=False)
     type = db.Column(db.Integer, unique=False) #1 -- taxonomy, 2 -- topology, 3 -- parent-child, 4 -- participant-meaning, 5 -- mereology
 
 class Templates(db.Model):
@@ -94,19 +95,23 @@ class Lexemes(db.Model):
 class Lexeme_relations(db.Model):
     lex_id = db.Column(db.Integer, nullable=False)
     target_id = db.Column(db.Integer, unique=False, primary_key=True)
-    type = db.Column(db.Integer, unique=False, nullable=False) #1 -- meaning, 2 -- antonym, 3 -- synonym
+    type = db.Column(db.Integer, unique=False, nullable=False) #1 -- meaning???, 2 -- antonym??, 3 -- synonym??, 4 -- link, 5 -- comment
+
+class Posts(db.Model):
+    post_id = db.Column(db.Integer, primary_key=True)
+    post = db.Column(db.Text)
+    comment = db.Column(db.Text)
 
 class Forms(db.Model):
     form_id = db.Column(db.Integer, primary_key=True)
     lex_id = db.Column(db.Integer, db.ForeignKey(Lexemes.lex_id))
-    type = db.Column(db.Integer, nullable=False) #1 -- form, 2 -- script form
     form = db.Column(db.Text, nullable=False)
-    parent_id = db.Column(db.Integer, nullable=True)
+    script_form = db.Column(db.Text, nullable=False)
 
 class Meanings(db.Model):
     m_id = db.Column(db.Integer, primary_key=True)
     lex_id = db.Column(db.Integer, db.ForeignKey(Lexemes.lex_id))
-    status = db.Column(db.Integer, nullable=False, default=1) # 1 -- not shown, 2 -- shown
+    status = db.Column(db.Integer, nullable=False, default=1) # 0 -- not shown, 1 -- shown
 
 class Example_to_meaning(db.Model):
     example_id = db.Column(db.Integer, db.ForeignKey(Examples.example_id), primary_key=True)

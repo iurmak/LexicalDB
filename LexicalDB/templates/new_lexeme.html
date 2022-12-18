@@ -50,6 +50,30 @@
             </div>
             <div class="overflow-auto row g-2 p-1 mb-2" style="max-height: 60vh;" id="forms">
             </div>
+            <div class="container row g-2 mb-2 align-items-center justify-content-start">
+                <div class="col-auto">
+                    <span class="form-label h5">Комментарии</span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="addComment()" type="button" id="add_comment_button">
+                        <span class="text-center">Добавить комментарий</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-auto row g-2 p-1 mb-2" style="max-height: 60vh;" id="comments">
+            </div>
+            <div class="container row g-2 mb-2 align-items-center justify-content-start">
+                <div class="col-auto">
+                    <span class="form-label h5">Ссылки</span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="addLink()" type="button" id="add_link_button">
+                        <span class="text-center">Добавить ссылку</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-auto row g-2 p-1 mb-2" style="max-height: 60vh;" id="links">
+            </div>
         </form>
     </div>
     <datalist id="languages">
@@ -92,6 +116,77 @@
                                dir="auto"
                         >
                         <label for="script_form_${current_num}">В графике</label>
+                    </div>
+                </div>
+            </div>`);
+            for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
+            autosize(document.getElementsByTagName('textarea')[i]);
+            }
+        }
+        function addComment() {
+            if ($(`#comments`).find('> div').length > 0) {
+                var current_num = $(`#comments`).find('> div').length + 1;
+            } else {
+                var current_num = 1
+            }
+            $(`#comments`).append(
+            `
+            <div class="col-12 row align-items-center justify-content-center g-2" id="comment_${current_num}">
+                <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="comment_${current_num}.remove()">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-10">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="comment_${current_num}"
+                               name="comment_${current_num}"
+                               placeholder="Введите текст"
+                               required
+                        >
+                        <label for="comment_${current_num}">Комментарий</label>
+                    </div>
+                </div>
+            </div>`);
+            for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
+            autosize(document.getElementsByTagName('textarea')[i]);
+            }
+        }
+        function addLink() {
+            if ($(`#links`).find('> div').length > 0) {
+                var current_num = $(`#links`).find('> div').length + 1;
+            } else {
+                var current_num = 1
+            }
+            $(`#links`).append(
+            `
+            <div class="col-12 row align-items-center justify-content-center g-2" id="link_${current_num}">
+                <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="link_${current_num}.remove()">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="link_${current_num}"
+                               name="link_${current_num}"
+                               placeholder="Введите текст"
+                               required
+                        >
+                        <label for="link_${current_num}">Ссылка</label>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="link_comment_${current_num}"
+                               name="link_comment_${current_num}"
+                               placeholder="Введите текст"
+                        >
+                        <label for="link_comment_${current_num}">Комментарий к ссылке</label>
                     </div>
                 </div>
             </div>`);

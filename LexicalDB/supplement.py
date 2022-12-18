@@ -1,6 +1,8 @@
 from markdown import markdown
 from flask import session, url_for, Markup, redirect, flash
-from LexicalDB.models import Users
+from LexicalDB.models import db, Users, Semantic_roles, Participants, Participant_relations,\
+    Event_structure, Templates, Template_relations, Lexemes, Lexeme_relations, Forms, Parts_of_speech, Languages,\
+    Examples, Event_structure_relations, Meanings, Labels, Example_to_meaning, Posts
 from flask_mail import Mail, Message
 from LexicalDB import app
 from bs4 import BeautifulSoup
@@ -18,6 +20,62 @@ class Amend:
     def anti_html(self):
         if self:
             return BeautifulSoup(self, features='html.parser').get_text()
+
+    def delete(self, type):
+        if type == 'meaning':
+            lex_id = Meanings.query.filter_by(m_id=self).first().lex_id
+            Meanings.query.filter_by(m_id=self).delete()
+            for p in Participant_relations.query.filter_by(target_id=self, type=4).all():
+                Participants.query.filter_by(participant_id=p.participant_id).delete()
+            for e in Example_to_meaning.query.filter_by(m_id=self).all():
+                Examples.query.filter_by(example_id=e.example_id).delete()
+            Example_to_meaning.query.filter_by(m_id=self).delete()
+            Participant_relations.query.filter_by(target_id=self, type=4).delete()
+            Lexeme_relations.query.filter_by(target_id=self, type=1).delete()
+            for ese in Event_structure_relations.query.filter_by(target_id=self, type=2).all():
+                Event_structure.query.filter_by(ese_id=ese.ese_id).delete()
+            Event_structure_relations.query.filter_by(target_id=self, type=2).delete()
+            db.session.commit()
+            return Amend.flash('Значение удалено.', 'success', url_for('edit_lexeme', lex_id=lex_id))
+
+        elif type == 'template':
+            return Amend.flash('Давайте сначала определимся, что нужно удалять.', 'warning', url_for('edit_template', templ_id=self))
+            lex_id = Meanings.query.filter_by(m_id=self).first().lex_id
+            Meanings.query.filter_by(m_id=self).delete()
+            for p in Participant_relations.query.filter_by(target_id=self, type=4).all():
+                Participants.query.filter_by(participant_id=p.participant_id).delete()
+            for e in Example_to_meaning.query.filter_by(m_id=self).all():
+                Examples.query.filter_by(example_id=e.example_id).delete()
+            Example_to_meaning.query.filter_by(m_id=self).delete()
+            Participant_relations.query.filter_by(target_id=self, type=4).delete()
+            Lexeme_relations.query.filter_by(target_id=self, type=1).delete()
+            for ese in Event_structure_relations.query.filter_by(target_id=self, type=2).all():
+                Event_structure.query.filter_by(ese_id=ese.ese_id).delete()
+            Event_structure_relations.query.filter_by(target_id=self, type=2).delete()
+            db.session.commit()
+            return Amend.flash('Значение удалено.', 'success', url_for('edit_lexeme', lex_id=lex_id))
+
+        elif type == 'lexeme':
+            for m in Meanings.query.filter_by(lex_id=self).all():
+                m_id = m.m_id
+                Meanings.query.filter_by(m_id=m_id).delete()
+                for p in Participant_relations.query.filter_by(target_id=m_id, type=4).all():
+                    Participants.query.filter_by(participant_id=p.participant_id).delete()
+                for e in Example_to_meaning.query.filter_by(m_id=m_id).all():
+                    Examples.query.filter_by(example_id=e.example_id).delete()
+                Example_to_meaning.query.filter_by(m_id=m_id).delete()
+                Participant_relations.query.filter_by(target_id=m_id, type=4).delete()
+                Lexeme_relations.query.filter_by(target_id=m_id, type=1).delete()
+                for ese in Event_structure_relations.query.filter_by(target_id=m_id, type=2).all():
+                    Event_structure.query.filter_by(ese_id=ese.ese_id).delete()
+                Event_structure_relations.query.filter_by(target_id=m_id, type=2).delete()
+            for l in Lexeme_relations.query.filter_by(lex_id=self).all():
+                if l.type in [4, 5]:
+                    Posts.query.filter_by(post_id=l.target_id).delete()
+            Lexeme_relations.query.filter_by(lex_id=self).delete()
+            Lexemes.query.filter_by(lex_id=self).delete()
+            db.session.commit()
+            return Amend.flash('Лексема удалена.', 'success', url_for('lexemes'))
 
     def md(self, html=False, delete_p=True, delete_br=True):
         if not self:
@@ -112,7 +170,6 @@ class Check():
             return what.split(by)
         return []
     def labels(self, type, tooltips=True):
-        print(self, type)
         if type == 'tax':
             labels = [(Labels.query.get(l.target_id).l, Labels.query.get(l.target_id).decode, Labels.query.get(l.target_id).l_id) for l in
                       Participant_relations.query.filter_by(type=1, participant_id=self).join(Labels, Participant_relations.target_id==Labels.l_id).order_by(

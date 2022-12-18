@@ -29,6 +29,12 @@
                         Сохранить
                     </button>
                 </div>
+                <div class="col-12 text-center mb-2">
+                    <button class="btn btn-sm btn-danger" type="submit" form="delete">
+                        Удалить
+                    </button>
+                    <form name="delete" method="post" id="delete"><input class="d-none" type="text" name="delete_meaning" value="1"></form>
+                </div>
             </div>
         </div>
         <form name="meaning" id="meaning" method="post">
@@ -67,10 +73,10 @@
             <div class="collapse show container overflow-auto mb-2" style="max-height: 60vh;" id="collapse_participants">
                 <div class="row row-cols-1 row-cols-lg-3 g-2" id="participants">
                     {% for p in Participant_relations.query.filter_by(target_id=m.m_id, type=4).all() %}
-                        <div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="existent_participant_{{ p.target_id }}">
+                        <div class="col row row-cols-1 align-items-center justify-content-center g-2 border-bottom border-1" id="existent_participant_{{ p.participant_id}}">
                             <div class="col-auto row align-items-center justify-content-center g-2">
                                 <div class="col-auto">
-                                    <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(existent_participant_{{ p.target_id }})">
+                                    <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteParticipant(existent_participant_{{ p.participant_id}})">
                                         Удалить
                                     </button>
                                 </div>
@@ -80,32 +86,33 @@
                                     </a>
                                 </div>
                                 <div class="col-auto">
-                                    <span>ID: <b>{{ p.target_id }}</b></span>
+                                    <span>ID: <b>{{ p.participant_id}}</b></span>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control label_not_in_use" id="existent_label_{{ p.target_id }}"
-                                           name="existent_label_{{ p.target_id }}"
+                                    <input type="text" class="form-control label_not_in_use" id="existent_label_{{ p.participant_id}}"
+                                           name="existent_label_{{ p.participant_id}}"
                                            placeholder="Введите текст"
-                                           value="{{ Participants.query.get(p.target_id).participant }}"
+                                           value="{{ Participants.query.get(p.participant_id).participant }}"
+                                           oninput="checkLabelAvailability(this, this.value)"
                                            disabled
                                            required
                                     >
-                                    <label for="existent_label_{{ p.target_id }}">Ярлык</label>
+                                    <label for="existent_label_{{ p.participant_id}}">Ярлык</label>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="existent_sr_{{ p.target_id }}"
-                                           name="existent_sr_{{ p.target_id }}"
+                                    <input type="text" class="form-control" id="existent_sr_{{ p.participant_id}}"
+                                           name="existent_sr_{{ p.participant_id}}"
                                            placeholder="Введите текст"
                                            list="sr_list"
-                                           value="{% if Participants.query.get(p.target_id).sr_id %}{{ Semantic_roles.query.get(Participants.query.get(p.target_id).sr_id).sr }}{% endif %}"
-                                           oninput="suggestions('sr', existent_sr_{{ p.target_id }}.value)"
+                                           value="{% if Participants.query.get(p.participant_id).sr_id %}{{ Semantic_roles.query.get(Participants.query.get(p.participant_id).sr_id).sr }}{% endif %}"
+                                           oninput="suggestions('sr', existent_sr_{{ p.participant_id}}.value)"
                                            disabled
                                     >
-                                    <label for="existent_sr_{{ p.target_id }}">Семантическая роль</label>
+                                    <label for="existent_sr_{{ p.participant_id}}">Семантическая роль</label>
                                 </div>
                             </div>
                             <div class="col">
@@ -118,8 +125,8 @@
                                        aria-expanded="false"
                                        style="text-decoration-line: none; font-variant: small-caps"
                                     >
-                                        {% if Check.labels(p.target_id, 'mer', tooltips=False) %}
-                                            <span>{{ Check.labels(p.target_id, 'mer', tooltips=False) }}</span>
+                                        {% if Check.labels(p.participant_id, 'mer', tooltips=False) %}
+                                            <span>{{ Check.labels(p.participant_id, 'mer', tooltips=False) }}</span>
                                         {% else %}
                                             <span>Мереология</span>
                                         {% endif %}
@@ -131,13 +138,13 @@
                                                     <input class="form-check-input"
                                                            type="checkbox"
                                                            value="{{ l.l_id }}"
-                                                           id="existent_mer_{{ p.target_id }}_{{ l.l_id }}"
-                                                           name="existent_mer_{{ p.target_id }}_{{ l.l_id }}"
-                                                           {% if Participant_relations.query.filter_by(participant_id=p.target_id, target_id=l.l_id, type=5).first() %}checked{% endif %}
+                                                           id="existent_mer_{{ p.participant_id}}_{{ l.l_id }}"
+                                                           name="existent_mer_{{ p.participant_id}}_{{ l.l_id }}"
+                                                           {% if Participant_relations.query.filter_by(participant_id=p.participant_id, target_id=l.l_id, type=5).first() %}checked{% endif %}
                                                            disabled
                                                     >
                                                     <label class="form-check-label"
-                                                           for="existent_mer_{{ p.target_id }}_{{ l.l_id }}"
+                                                           for="existent_mer_{{ p.participant_id}}_{{ l.l_id }}"
                                                            style="font-variant: small-caps"
                                                     >
                                                         {{ l.l }}
@@ -158,8 +165,8 @@
                                        aria-expanded="false"
                                        style="text-decoration-line: none; font-variant: small-caps"
                                     >
-                                        {% if Check.labels(p.target_id, 'tax', tooltips=False) %}
-                                            <span>{{ Check.labels(p.target_id, 'tax', tooltips=False) }}</span>
+                                        {% if Check.labels(p.participant_id, 'tax', tooltips=False) %}
+                                            <span>{{ Check.labels(p.participant_id, 'tax', tooltips=False) }}</span>
                                         {% else %}
                                             <span>Таксономия</span>
                                         {% endif %}
@@ -171,13 +178,13 @@
                                                     <input class="form-check-input"
                                                            type="checkbox"
                                                            value="{{ l.l_id }}"
-                                                           id="existent_tax_{{ p.target_id }}_{{ l.l_id }}"
-                                                           name="existent_tax_{{ p.target_id }}_{{ l.l_id }}"
-                                                           {% if Participant_relations.query.filter_by(participant_id=p.target_id, target_id=l.l_id, type=1).first() %}checked{% endif %}
+                                                           id="existent_tax_{{ p.participant_id}}_{{ l.l_id }}"
+                                                           name="existent_tax_{{ p.participant_id}}_{{ l.l_id }}"
+                                                           {% if Participant_relations.query.filter_by(participant_id=p.participant_id, target_id=l.l_id, type=1).first() %}checked{% endif %}
                                                            disabled
                                                     >
                                                     <label class="form-check-label"
-                                                           for="existent_tax_{{ p.target_id }}_{{ l.l_id }}"
+                                                           for="existent_tax_{{ p.participant_id}}_{{ l.l_id }}"
                                                            style="font-variant: small-caps"
                                                     >
                                                         {{ l.l }}
@@ -198,8 +205,8 @@
                                        aria-expanded="false"
                                        style="text-decoration-line: none; font-variant: small-caps"
                                     >
-                                        {% if Check.labels(p.target_id, 'top', tooltips=False) %}
-                                            <span>{{ Check.labels(p.target_id, 'top', tooltips=False) }}</span>
+                                        {% if Check.labels(p.participant_id, 'top', tooltips=False) %}
+                                            <span>{{ Check.labels(p.participant_id, 'top', tooltips=False) }}</span>
                                         {% else %}
                                             <span>Топология</span>
                                         {% endif %}
@@ -211,13 +218,13 @@
                                                     <input class="form-check-input"
                                                            type="checkbox"
                                                            value="{{ l.l_id }}"
-                                                           id="existent_top_{{ p.target_id }}_{{ l.l_id }}"
-                                                           name="existent_top_{{ p.target_id }}_{{ l.l_id }}"
-                                                           {% if Participant_relations.query.filter_by(participant_id=p.target_id, target_id=l.l_id, type=2).first() %}checked{% endif %}
+                                                           id="existent_top_{{ p.participant_id}}_{{ l.l_id }}"
+                                                           name="existent_top_{{ p.participant_id}}_{{ l.l_id }}"
+                                                           {% if Participant_relations.query.filter_by(participant_id=p.participant_id, target_id=l.l_id, type=2).first() %}checked{% endif %}
                                                            disabled
                                                     >
                                                     <label class="form-check-label"
-                                                           for="existent_top_{{ p.target_id }}_{{ l.l_id }}"
+                                                           for="existent_top_{{ p.participant_id}}_{{ l.l_id }}"
                                                            style="font-variant: small-caps"
                                                     >
                                                         {{ l.l }}
@@ -230,20 +237,20 @@
                             </div>
                             <div class="col">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="existent_other_{{ p.target_id }}"
-                                           name="existent_other_{{ p.target_id }}"
+                                    <input type="text" class="form-control" id="existent_other_{{ p.participant_id}}"
+                                           name="existent_other_{{ p.participant_id}}"
                                            placeholder="Введите текст"
-                                           value="{{ Participants.query.get(p.target_id).other }}"
+                                           value="{{ Participants.query.get(p.participant_id).other }}"
                                            disabled
                                     >
-                                    <label for="existent_other_{{ p.target_id }}">Другое</label>
+                                    <label for="existent_other_{{ p.participant_id}}">Другое</label>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="form-floating">
                                     <select class="form-select" id="status_1" name="status_1" disabled>
-                                        <option value="1"{% if Participants.query.get(p.target_id).status == 1 %} selected{% endif %}>ядерный</option>
-                                        <option value="2"{% if Participants.query.get(p.target_id).status == 2 %} selected{% endif %}>периферийный</option>
+                                        <option value="1"{% if Participants.query.get(p.participant_id).status == 1 %} selected{% endif %}>ядерный</option>
+                                        <option value="2"{% if Participants.query.get(p.participant_id).status == 2 %} selected{% endif %}>периферийный</option>
                                     </select>
                                     <label for="status_1">Этот участник</label>
                                 </div>
@@ -253,8 +260,8 @@
                                     <label for="is_child_1" class="form-label">Родительский участник</label>
                                     <select class="form-select" size="4" id="is_child_1" name="is_child_1" disabled multiple>
                                         <option value="">отсутствует</option>
-                                        {% for i in Participants.query.join(Participant_relations, Participants.participant_id==Participant_relations.participant_id).filter(not_(Participant_relations.type.contains(3))).all() %}
-                                            <option value="{{ i.participant_id }}"{% if Participant_relations.query.filter_by(participant_id=i.participant_id, target_id=p.target_id, type=3).first() %} selected{% endif %}>
+                                        {% for i in Participants.query.filter_by(type=1).all() %}
+                                            <option value="{{ i.participant_id }}"{% if Participant_relations.query.filter_by(participant_id=i.participant_id, target_id=p.participant_id, type=3).first() %} selected{% endif %}>
                                                 {{ i.participant }}
                                             </option>
                                         {% endfor %}
@@ -292,10 +299,8 @@
                     {% for e in Example_to_meaning.query.filter_by(m_id=m.m_id) %}
                         <div class="col" id="existing_example_column_{{ e.example_id }}">
                             <div class="card my-2">
-                                <div class="col-auto">
-                                    <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteExample(existing_example_column_{{ e.example_id }})">
-                                        Удалить
-                                    </button>
+                                <div class="container my-2 text-danger text-center">
+                                    <span type="button" href="();" onclick="deleteExample(existing_example_column_{{ e.example_id }})">Удалить</span>
                                 </div>
                                 <div class="container my-2">
                                     <div class="form-floating">
@@ -790,7 +795,7 @@
                                 <span>Мереология</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for l in Labels.query.filter_by(type=1).all() %}
+                                {% for l in Labels.query.filter_by(type=1).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
@@ -834,7 +839,7 @@
                                 <span>Таксономия</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for l in Labels.query.filter_by(type=2).all() %}
+                                {% for l in Labels.query.filter_by(type=2).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
@@ -878,7 +883,7 @@
                                 <span>Топология</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
-                                {% for l in Labels.query.filter_by(type=3).all() %}
+                                {% for l in Labels.query.filter_by(type=3).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
                                     <li>
                                         <div class="form-check">
                                             <input class="form-check-input"
@@ -1204,7 +1209,7 @@
                 var assert_presuppose =
             `
             <div class="col-auto">
-                <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}}" name="status_ese_${type}_${current_num}">
+                <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}" name="status_ese_${type}_${current_num}">
                     <option value="1">ассерция</option>
                     <option value="2">пресуппозиция</option>
                 </select>
@@ -1213,11 +1218,8 @@
             }
             $(`#${id}`).append(
             `
-            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_column_${type}_${current_num}">
+            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
                 <div class="col-3 col-xxl-2 g-2 mt-0 row align-items-center justify-content-center">
-                    <div class="col-auto">
-                        <span type="button" href="();" onclick="ese_column_${type}_${current_num}.remove()">❌</span>
-                    </div>
                     <div class="col-auto">
                         <input class="form-control form-control-sm"
                                type="number" required
@@ -1230,7 +1232,7 @@
                 </div>
                 <div class="col-9 col-xxl-2">
                     <div class="form-floating">
-                        <select class="form-select" id="is_child_${type}_${current_num}}" name="is_child_${type}_${current_num}">
+                        <select class="form-select" id="is_child_${type}_${current_num}" name="is_child_${type}_${current_num}">
                             <option value="">нет</option>
                             {% for t in Templates.query.all() %}
                                 <option value="{{t.templ_id}}">{{t.templ}}</option>
@@ -1269,7 +1271,7 @@
         };
 
         function deleteExample(example) {
-            if (example.id.includes('existent')) {
+            if (example.id.includes('existing')) {
                 var e_id = example.id.split('_').slice(-1);
                 $('#meaning').append(
                     `<input class="d-none" type="text" name="delete_e_${e_id}" value="${e_id}">`

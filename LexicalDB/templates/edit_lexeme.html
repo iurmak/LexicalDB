@@ -10,6 +10,12 @@
                     Сохранить
                 </button>
             </div>
+            <div class="col-auto">
+                <button class="btn btn-sm btn-danger" type="submit" form="delete">
+                    Удалить
+                </button>
+                <form name="delete" method="post" id="delete"><input class="d-none" type="text" name="delete_lexeme" value="1"></form>
+            </div>
         </div>
         <form name="lexeme" id="lexeme" method="post">
             <div class="row row-cols-1 row-cols-lg-2 align-items-center justify-content-between g-2 mb-2">
@@ -50,7 +56,7 @@
                 </div>
             </div>
             <div class="overflow-auto row g-2 p-1 mb-2" style="max-height: 60vh;" id="forms">
-                {% for f in Forms.query.filter_by(lex_id=lex_id, type=1).all() %}
+                {% for f in Forms.query.filter_by(lex_id=lex_id).all() %}
                     <div class="col-12 row align-items-center justify-content-center g-2" id="existent_form_{{ f.form_id }}">
                         <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
                             <div>
@@ -76,9 +82,87 @@
                                        name="existent_script_form_{{ f.form_id }}"
                                        placeholder="Введите текст"
                                        dir="auto"
-                                       value="{{ Forms.query.filter_by(parent_id=f.form_id, type=2).first().form }}"
+                                       value="{{ Forms.query.filter_by(form_id=f.form_id).first().script_form }}"
                                        >
                                 <label for="existent_script_form_{{ f.form_id }}">В графике</label>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="container row g-2 mb-2 align-items-center justify-content-start">
+                <div class="col-auto">
+                    <span class="form-label h5">Комментарии</span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="addComment()" type="button" id="add_comment_button">
+                        <span class="text-center">Добавить комментарий</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-auto row g-2 p-1 mb-2" style="max-height: 60vh;" id="comments">
+                {% for p in Lexeme_relations.query.filter_by(lex_id=lex_id, type=5).all() %}
+                    <div class="col-12 row align-items-center justify-content-center g-2" id="existent_comment_column_{{ p.target_id }}">
+                        <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteComment(existent_comment_column_{{ p.target_id }})">
+                                    Удалить
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-10">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="existent_comment_{{ p.target_id }}"
+                                       name="existent_comment_{{ p.target_id }}"
+                                       placeholder="Введите текст"
+                                       value="{{ Posts.query.get(p.target_id).post }}"
+                                       required
+                                >
+                                <label for="existent_comment_{{ p.target_id }}">Комментарий</label>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="container row g-2 mb-2 align-items-center justify-content-start">
+                <div class="col-auto">
+                    <span class="form-label h5">Ссылки</span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="addLink()" type="button" id="add_link_button">
+                        <span class="text-center">Добавить ссылку</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-auto row g-2 p-1 mb-2" style="max-height: 60vh;" id="links">
+                {% for p in Lexeme_relations.query.filter_by(lex_id=lex_id, type=4).all() %}
+                    <div class="col-12 row align-items-center justify-content-center g-2" id="existent_link_column_{{ p.target_id }}">
+                        <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="deleteLink(existent_link_column_{{ p.target_id }})">
+                                    Удалить
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-5">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="existent_link_{{ p.target_id }}"
+                                       name="existent_link_{{ p.target_id }}"
+                                       placeholder="Введите текст"
+                                       value="{{ Posts.query.get(p.target_id).post }}"
+                                       required
+                                >
+                                <label for="existent_link_{{ p.target_id }}">Ссылка</label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-5">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="existent_link_comment_{{ p.target_id }}"
+                                       name="existent_link_comment_{{ p.target_id }}"
+                                       placeholder="Введите текст"
+                                       value="{{ Posts.query.get(p.target_id).comment }}"
+                                >
+                                <label for="existent_link_comment_{{ p.target_id }}">Комментарий к ссылке</label>
                             </div>
                         </div>
                     </div>
@@ -181,11 +265,100 @@
                 $('#add_form_button').focus();
             }
         });
+        function addComment() {
+            if ($(`#comments`).find('> div').length > 0) {
+                var current_num = $(`#comments`).find('> div').length + 1;
+            } else {
+                var current_num = 1
+            }
+            $(`#comments`).append(
+            `
+            <div class="col-12 row align-items-center justify-content-center g-2" id="comment_${current_num}">
+                <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="comment_${current_num}.remove()">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-10">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="comment_${current_num}"
+                               name="comment_${current_num}"
+                               placeholder="Введите текст"
+                               required
+                        >
+                        <label for="comment_${current_num}">Комментарий</label>
+                    </div>
+                </div>
+            </div>`);
+            for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
+            autosize(document.getElementsByTagName('textarea')[i]);
+            }
+        }
+        function addLink() {
+            if ($(`#links`).find('> div').length > 0) {
+                var current_num = $(`#links`).find('> div').length + 1;
+            } else {
+                var current_num = 1
+            }
+            $(`#links`).append(
+            `
+            <div class="col-12 row align-items-center justify-content-center g-2" id="link_${current_num}">
+                <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="link_${current_num}.remove()">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="link_${current_num}"
+                               name="link_${current_num}"
+                               placeholder="Введите текст"
+                               required
+                        >
+                        <label for="link_${current_num}">Ссылка</label>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="link_comment_${current_num}"
+                               name="link_comment_${current_num}"
+                               placeholder="Введите текст"
+                        >
+                        <label for="link_comment_${current_num}">Комментарий к ссылке</label>
+                    </div>
+                </div>
+            </div>`);
+            for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
+            autosize(document.getElementsByTagName('textarea')[i]);
+            }
+        }
         function deleteForm(form) {
             if (form.id.includes('existent')) {
                 var form_id = form.id.split('_').slice(-1);
                 $('#lexeme').append(
                     `<input class="d-none" type="text" name="delete_form_${form_id}" value="${form_id}">`
+                )
+            };
+            form.remove()
+        }
+        function deleteComment(form) {
+            if (form.id.includes('existent')) {
+                var form_id = form.id.split('_').slice(-1);
+                $('#lexeme').append(
+                    `<input class="d-none" type="text" name="delete_comment_${form_id}" value="${form_id}">`
+                )
+            };
+            form.remove()
+        }
+        function deleteLink(form) {
+            if (form.id.includes('existent')) {
+                var form_id = form.id.split('_').slice(-1);
+                $('#lexeme').append(
+                    `<input class="d-none" type="text" name="delete_link_${form_id}" value="${form_id}">`
                 )
             };
             form.remove()

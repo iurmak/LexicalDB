@@ -3,7 +3,7 @@ from flask import render_template, request, url_for, session, make_response, jso
 from LexicalDB.supplement import Emails, Amend, Check
 from LexicalDB.models import db, Users, Semantic_roles, Participants, Participant_relations,\
     Event_structure, Templates, Template_relations, Lexemes, Lexeme_relations, Forms, Parts_of_speech, Languages,\
-    Examples, Event_structure_relations, Meanings, Labels, Example_to_meaning
+    Examples, Event_structure_relations, Meanings, Labels, Example_to_meaning, Posts
 from itsdangerous import URLSafeSerializer
 from re import sub, compile
 from sqlalchemy import not_
@@ -29,10 +29,14 @@ def edit_lexeme(lex_id):
                                Meanings=Meanings,
                                Examples=Examples,
                                Participant_relations=Participant_relations,
-                               Participants=Participants
+                               Participants=Participants,
+                               Lexeme_relations=Lexeme_relations,
+                               Posts=Posts
                                )
 
     elif request.method == 'POST':
+        if request.form.get('delete_lexeme'):
+            return Amend.delete(lex_id, type='lexeme')
         no_spaces_at_edges = compile(r'( +$|^ +)')
         request_lang = no_spaces_at_edges.sub('', request.form.get('language'))
         if Languages.query.filter_by(lang=request_lang).first():
@@ -60,34 +64,80 @@ def edit_lexeme(lex_id):
             Forms.query.filter_by(parent_id=form).delete()
             db.session.commit()
 
+        comments_to_delete = [request.form.get(i) for i in request.form if
+                           i.startswith('delete_comment_') and request.form.get(i)]
+        for c in comments_to_delete:
+            Posts.query.filter_by(post_id=c).delete()
+            Lexeme_relations.query.filter_by(target_id=c, type=5).delete()
+            db.session.commit()
+
         all_forms = [i for i in request.form if
                      i.startswith('main_form_') and request.form.get(i)]
         for f in all_forms:
             if no_spaces_at_edges.sub('', request.form.get(f)):
                 added_form = Forms(
                     form=no_spaces_at_edges.sub('', request.form.get(f)),
-                    lex_id=lex_id,
-                    type=1
+                    script_form=no_spaces_at_edges.sub('', request.form.get(f'script_form_{f.split("_")[-1]}')),
+                    lex_id=lex_id
                 )
                 db.session.add(added_form)
                 db.session.commit()
-            if no_spaces_at_edges.sub('', request.form.get(f'script_form_{f.split("_")[-1]}')):
+
+        for f in [form for form in request.form if form.startswith(f'existent_main_form_')]:
+            Forms.query.filter_by(form_id=int(f.split('_')[-1])).update(
+                {'form': request.form.get(f"existent_main_form_{f.split('_')[-1]}"),
+                 'script_form': request.form.get(f"existent_script_form_{f.split('_')[-1]}")}
+            )
+            db.session.commit()
+
+        all_comments = [i for i in request.form if
+                     i.startswith('comment_') and request.form.get(i)]
+        for f in all_comments:
+            if no_spaces_at_edges.sub('', request.form.get(f)):
+                added_form = Posts(
+                    post=no_spaces_at_edges.sub('', request.form.get(f))
+                )
+                db.session.add(added_form)
+                db.session.commit()
+            db.session.add(
+                Lexeme_relations(
+                    lex_id=lex_id,
+                    target_id=added_form.post_id,
+                    type=5
+                )
+            )
+            db.session.commit()
+
+        for f in [form for form in request.form if form.startswith(f'existent_comment')]:
+            Posts.query.filter_by(post_id=int(f.split('_')[-1])).update(
+                {'post': request.form.get(f"existent_comment_{f.split('_')[-1]}")}
+            )
+            db.session.commit()
+
+        all_links = [i for i in request.form if
+                     i.startswith('link_') and i.split('_')[1] != 'comment' and request.form.get(i)]
+        for f in all_links:
+            if no_spaces_at_edges.sub('', request.form.get(f)):
+                added_form = Posts(
+                    post=no_spaces_at_edges.sub('', request.form.get(f)),
+                    comment=no_spaces_at_edges.sub('', request.form.get(f'link_comment_{f.split("_")[-1]}'))
+                )
+                db.session.add(added_form)
+                db.session.commit()
+
                 db.session.add(
-                    Forms(
-                        form=no_spaces_at_edges.sub('', request.form.get(f'script_form_{f.split("_")[-1]}')),
+                    Lexeme_relations(
                         lex_id=lex_id,
-                        type=2,
-                        parent_id=added_form.form_id
+                        target_id=added_form.post_id,
+                        type=4
                     )
                 )
                 db.session.commit()
 
-        for f in [form for form in request.form if form.startswith(f'existent_')]:
-            Forms.query.filter_by(form_id=int(f.split('_')[-1]), type=1).update(
-                {'form': request.form.get(f"existent_main_form_{f.split('_')[-1]}")}
-            )
-            Forms.query.filter_by(parent_id=int(f.split('_')[-1]), type=2).update(
-                {'form': request.form.get(f"existent_script_form_{f.split('_')[-1]}")}
+        for f in [form for form in request.form if form.startswith(f'existent_link_') and form.split('_')[1] != 'comment']:
+            Posts.query.filter_by(post_id=int(f.split('_')[-1])).update(
+                {'post': request.form.get(f"existent_link_{f.split('_')[-1]}"),
+                 'comment': request.form.get(f"existent_link_comment_{f.split('_')[-1]}")}
             )
             db.session.commit()
         return Amend.flash('Изменения сохранены.', 'success', url_for('edit_lexeme', lex_id=lex_id))
@@ -126,6 +176,40 @@ def new_lexeme():
         )
         db.session.add(lexeme)
         db.session.commit()
+        all_comments = [no_spaces_at_edges.sub('', request.form.get(i)) for i in request.form if
+                              i.startswith('comment_') and request.form.get(i)]
+        for c in all_comments:
+            comment = Posts(
+                    post=c
+                )
+            db.session.add(comment)
+            db.session.commit()
+            db.session.add(
+                Lexeme_relations(
+                    lex_id=lexeme.lex_id,
+                    target_id=comment.post_id,
+                    type=5
+                )
+            )
+            db.session.commit()
+
+        all_links = [i for i in request.form if
+                        i.startswith('link_') and request.form.get(i)]
+        for l in all_links:
+            comment = Posts(
+                post=no_spaces_at_edges.sub('', request.form.get(l)),
+                comment=no_spaces_at_edges.sub('', request.form.get(f'link_comment_{l.split("_")[-1]}'))
+            )
+            db.session.add(comment)
+            db.session.commit()
+            db.session.add(
+                Lexeme_relations(
+                    lex_id=lexeme.lex_id,
+                    target_id=comment.post_id,
+                    type=4
+                )
+            )
+            db.session.commit()
 
         all_forms = [i for i in request.form if
                      i.startswith('main_form_') and request.form.get(i)]
@@ -134,19 +218,10 @@ def new_lexeme():
                 form = Forms(
                         form=no_spaces_at_edges.sub('', request.form.get(f)),
                         lex_id=lexeme.lex_id,
-                        type=1
+                        script_form=no_spaces_at_edges.sub('', request.form.get(f'script_form_{f.split("_")[-1]}'))
                     )
                 db.session.add(form)
                 db.session.commit()
-            db.session.add(
-                Forms(
-                    form=no_spaces_at_edges.sub('', request.form.get(f'script_form_{f.split("_")[-1]}')),
-                    lex_id=lexeme.lex_id,
-                    parent_id=form.form_id,
-                    type=2
-                )
-            )
-            db.session.commit()
         return Amend.flash('Лексема добавлена.', 'success', url_for('edit_lexeme', lex_id=lexeme.lex_id))
 
 @app.route('/lexemes', methods=['POST', 'GET'])
@@ -216,18 +291,13 @@ def new_meaning(lex_id):
 
     elif request.method == 'POST':
         no_spaces_at_edges = compile(r'( +$|^ +)')
-        example = Examples(
-            example=no_spaces_at_edges.sub('', request.form.get('example', '')),
-            original_script=no_spaces_at_edges.sub('', request.form.get('original_script', '')),
-            translation=no_spaces_at_edges.sub('', request.form.get('translation', '')),
-            source=no_spaces_at_edges.sub('', request.form.get('source', '')),
-        )
-        db.session.add(example)
-        db.session.commit()
+        if request.form.get('hidden'):
+            status = 1
+        else:
+            status = 0
         meaning = Meanings(
             lex_id=lex_id,
-            example_id=example.example_id,
-            government=no_spaces_at_edges.sub('', request.form.get('government'))
+            status=status
         )
         db.session.add(meaning)
         db.session.commit()
@@ -252,14 +322,30 @@ def new_meaning(lex_id):
                 )
                 db.session.commit()
 
+        all_new_mereology = [request.form.get(i) for i in request.form if
+                             i.startswith('new_mer_') and no_spaces_at_edges.sub('', request.form.get(i))]
+        for new_mer in all_new_mereology:
+            for mer in new_mer.split(','):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer),
+                                              type=1).first() and no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Labels(
+                            l=no_spaces_at_edges.sub('', mer),
+                            type=1
+                        )
+                    )
+                    db.session.commit()
+
         all_new_taxonomy = [request.form.get(i) for i in request.form if
                             i.startswith('new_tax_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_tax in all_new_taxonomy:
             for tax in new_tax.split(','):
-                if not Taxonomy.query.filter_by(tax=tax).first() and no_spaces_at_edges.sub('', tax):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax),
+                                              type=2).first() and no_spaces_at_edges.sub('', tax):
                     db.session.add(
-                        Taxonomy(
-                            tax=no_spaces_at_edges.sub('', tax)
+                        Labels(
+                            l=no_spaces_at_edges.sub('', tax),
+                            type=2
                         )
                     )
                     db.session.commit()
@@ -268,10 +354,12 @@ def new_meaning(lex_id):
                             i.startswith('new_top_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_top in all_new_topology:
             for top in new_top.split(','):
-                if not Topology.query.filter_by(top=top).first() and no_spaces_at_edges.sub('', top):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', top),
+                                              type=3).first() and no_spaces_at_edges.sub('', top):
                     db.session.add(
-                        Topology(
-                            top=no_spaces_at_edges.sub('', top)
+                        Labels(
+                            l=no_spaces_at_edges.sub('', top),
+                            type=3
                         )
                     )
                     db.session.commit()
@@ -279,7 +367,8 @@ def new_meaning(lex_id):
         all_participants = [i.split('_')[-1] for i in request.form if i.startswith('label_') and request.form.get(i)]
         for p in all_participants:
             if no_spaces_at_edges.sub('', request.form.get(f'sr_{p}')):
-                sr_id = Semantic_roles.query.filter_by(sr=no_spaces_at_edges.sub('', request.form.get(f'sr_{p}'))).first().sr_id
+                sr_id = Semantic_roles.query.filter_by(
+                    sr=no_spaces_at_edges.sub('', request.form.get(f'sr_{p}'))).first().sr_id
             else:
                 sr_id = ''
 
@@ -287,7 +376,8 @@ def new_meaning(lex_id):
                 participant=no_spaces_at_edges.sub('', request.form.get(f'label_{p}')),
                 sr_id=sr_id,
                 other=no_spaces_at_edges.sub('', request.form.get(f'other_{p}')),
-                status=request.form.get(f'status_{p}')
+                status=request.form.get(f'status_{p}'),
+                type=2
             )
             db.session.add(participant)
             db.session.commit()
@@ -298,6 +388,7 @@ def new_meaning(lex_id):
                     type=4
                 )
             )
+            db.session.commit()
             if request.form.to_dict(flat=False).get(f'is_child_{p}'):
                 for base in request.form.to_dict(flat=False).get(f'is_child_{p}'):
                     db.session.add(
@@ -322,7 +413,7 @@ def new_meaning(lex_id):
                     db.session.add(
                         Participant_relations(
                             participant_id=participant.participant_id,
-                            target_id=Taxonomy.query.filter_by(tax=no_spaces_at_edges.sub('', tax)).first().tax_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax), type=2).first().l_id,
                             type=1
                         )
                     )
@@ -342,8 +433,28 @@ def new_meaning(lex_id):
                     db.session.add(
                         Participant_relations(
                             participant_id=participant.participant_id,
-                            target_id=Topology.query.filter_by(top=no_spaces_at_edges.sub('', top)).first().top_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', top), type=3).first().l_id,
                             type=2
+                        )
+                    )
+                    db.session.commit()
+
+            for mer in [i for i in request.form if i.startswith(f'mer_{p}_') and request.form.get(i)]:
+                db.session.add(
+                    Participant_relations(
+                        participant_id=participant.participant_id,
+                        target_id=int(mer.split('_')[-1]),
+                        type=5
+                    )
+                )
+                db.session.commit()
+            for mer in request.form.get(f'new_mer_{p}').split(','):
+                if no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Participant_relations(
+                            participant_id=participant.participant_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer), type=1).first().l_id,
+                            type=5
                         )
                     )
                     db.session.commit()
@@ -368,14 +479,6 @@ def new_meaning(lex_id):
                             type=1
                         )
                     )
-                else:
-                    db.session.add(
-                        Event_structure_relations(
-                            ese_id=item.ese_id,
-                            target_id=int(request.form.get('based_on')),
-                            type=1
-                        )
-                    )
                 db.session.add(
                     Event_structure_relations(
                         ese_id=item.ese_id,
@@ -384,6 +487,21 @@ def new_meaning(lex_id):
                     )
                 )
                 db.session.commit()
+
+        for e in [i for i in request.form if i.startswith('example_')]:
+            e_id = e.split('_')[-1]
+            example = Examples(
+                example = no_spaces_at_edges.sub('', request.form.get(f'example_{e_id}', '')),
+                original_script = no_spaces_at_edges.sub('', request.form.get(f'original_script_{e_id}', '')),
+                translation = no_spaces_at_edges.sub('', request.form.get(f'translation_{e_id}', '')),
+                source = no_spaces_at_edges.sub('', request.form.get(f'source_{e_id}', '')),
+                government = no_spaces_at_edges.sub('', request.form.get(f'government_{e_id}', ''))
+            )
+            db.session.add(example)
+            db.session.commit()
+            db.session.add(Example_to_meaning(example_id=example.example_id, m_id=meaning.m_id))
+            db.session.commit()
+        db.session.commit()
         return Amend.flash('Значение добавлено.', 'success', url_for('edit_lexeme', lex_id=lex_id))
 
 @app.route('/edit/meaning/<int:m_id>', methods=['POST', 'GET'])
@@ -414,6 +532,8 @@ def edit_meaning(m_id):
                                )
 
     elif request.method == 'POST':
+        if request.form.get('delete_meaning'):
+            return Amend.delete(m_id, type='meaning')
         no_spaces_at_edges = compile(r'( +$|^ +)')
         m = Meanings.query.get(m_id)
         if request.form.get('based_on'):
@@ -423,7 +543,7 @@ def edit_meaning(m_id):
 
         for e in [i for i in request.form if i.startswith('existing_example')]:
             e_id = e.split('_')[-1]
-            Examples.query.filter_by(example_id=m.example_id).update(
+            Examples.query.filter_by(example_id=e_id).update(
                 {'example': no_spaces_at_edges.sub('', request.form.get(f'existing_example_{e_id}', '')),
                  'original_script': no_spaces_at_edges.sub('', request.form.get(f'existing_original_script_{e_id}', '')),
                  'translation': no_spaces_at_edges.sub('', request.form.get(f'existing_translation_{e_id}', '')),
@@ -461,14 +581,30 @@ def edit_meaning(m_id):
                 )
                 db.session.commit()
 
+        all_new_mereology = [request.form.get(i) for i in request.form if
+                             i.startswith('new_mer_') and no_spaces_at_edges.sub('', request.form.get(i))]
+        for new_mer in all_new_mereology:
+            for mer in new_mer.split(','):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer),
+                                              type=1).first() and no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Labels(
+                            l=no_spaces_at_edges.sub('', mer),
+                            type=1
+                        )
+                    )
+                    db.session.commit()
+
         all_new_taxonomy = [request.form.get(i) for i in request.form if
                             i.startswith('new_tax_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_tax in all_new_taxonomy:
             for tax in new_tax.split(','):
-                if not Labels.query.filter_by(type=2).first() and no_spaces_at_edges.sub('', tax):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax),
+                                              type=2).first() and no_spaces_at_edges.sub('', tax):
                     db.session.add(
-                        Taxonomy(
-                            tax=no_spaces_at_edges.sub('', tax)
+                        Labels(
+                            l=no_spaces_at_edges.sub('', tax),
+                            type=2
                         )
                     )
                     db.session.commit()
@@ -477,10 +613,12 @@ def edit_meaning(m_id):
                             i.startswith('new_top_') and no_spaces_at_edges.sub('', request.form.get(i))]
         for new_top in all_new_topology:
             for top in new_top.split(','):
-                if not Topology.query.filter_by(top=top).first() and no_spaces_at_edges.sub('', top):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', top),
+                                              type=3).first() and no_spaces_at_edges.sub('', top):
                     db.session.add(
-                        Topology(
-                            top=no_spaces_at_edges.sub('', top)
+                        Labels(
+                            l=no_spaces_at_edges.sub('', top),
+                            type=3
                         )
                     )
                     db.session.commit()
@@ -489,6 +627,7 @@ def edit_meaning(m_id):
                                   i.startswith('delete_p_') and request.form.get(i)]
         examples_to_delete = [request.form.get(i) for i in request.form if
                                   i.startswith('delete_e_') and request.form.get(i)]
+
         for p in participants_to_delete:
             Participants.query.filter_by(participant_id=p).delete()
             Participant_relations.query.filter_by(participant_id=p).delete()
@@ -496,7 +635,7 @@ def edit_meaning(m_id):
         for e in examples_to_delete:
             Examples.query.filter_by(example_id=e).delete()
             Example_to_meaning.query.filter_by(example_id=e).delete()
-
+        db.session.commit()
         all_participants = [i.split('_')[-1] for i in request.form if i.startswith('label_') and request.form.get(i)]
         for p in all_participants:
             if no_spaces_at_edges.sub('', request.form.get(f'sr_{p}')):
@@ -544,7 +683,7 @@ def edit_meaning(m_id):
                     db.session.add(
                         Participant_relations(
                             participant_id=participant.participant_id,
-                            target_id=Taxonomy.query.filter_by(tax=no_spaces_at_edges.sub('', tax)).first().tax_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax), type=2).first().l_id,
                             type=1
                         )
                     )
@@ -564,8 +703,28 @@ def edit_meaning(m_id):
                     db.session.add(
                         Participant_relations(
                             participant_id=participant.participant_id,
-                            target_id=Topology.query.filter_by(top=no_spaces_at_edges.sub('', top)).first().top_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', top), type=3).first().l_id,
                             type=2
+                        )
+                    )
+                    db.session.commit()
+
+            for mer in [i for i in request.form if i.startswith(f'mer_{p}_') and request.form.get(i)]:
+                db.session.add(
+                    Participant_relations(
+                        participant_id=participant.participant_id,
+                        target_id=int(mer.split('_')[-1]),
+                        type=5
+                    )
+                )
+                db.session.commit()
+            for mer in request.form.get(f'new_mer_{p}').split(','):
+                if no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Participant_relations(
+                            participant_id=participant.participant_id,
+                            target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer), type=1).first().l_id,
+                            type=5
                         )
                     )
                     db.session.commit()

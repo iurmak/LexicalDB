@@ -35,6 +35,8 @@ def edit_template(templ_id):
                                )
 
     elif request.method == 'POST':
+        if request.form.get('delete_template'):
+            return Amend.delete(templ_id, type='template')
         no_spaces_at_edges = compile(r'( +$|^ +)')
         Templates.query.filter_by(templ_id=templ_id).update(
             {'templ': request.form.get('template_name')}
@@ -577,23 +579,23 @@ def editing_autocomplete():
         elif type == 'existent_participant':
             p = input
             taxonomy_ids = [i.target_id for i in Participant_relations.query.filter_by(participant_id=p, type=1).all()]
-            if Check.labels(input, 'tax', tooltips=False):
-                tax_names = Check.labels(input, 'tax', tooltips=False)
+            if Check.labels(p, 'tax', tooltips=False):
+                tax_names = Check.labels(p, 'tax', tooltips=False)
             else:
                 tax_names = 'Таксономия'
             topology_ids = [i.target_id for i in
                             Participant_relations.query.filter_by(participant_id=p, type=2).all()]
-            if Check.labels(input, 'top', tooltips=False):
-                top_names = Check.labels(input, 'top', tooltips=False)
+            if Check.labels(p, 'top', tooltips=False):
+                top_names = Check.labels(p, 'top', tooltips=False)
             else:
                 top_names = 'Топология'
             mereology_ids = [i.target_id for i in
                              Participant_relations.query.filter_by(participant_id=p, type=5).all()]
-            if Check.labels(input, 'mer', tooltips=False):
-                mer_names = Check.labels(input, 'mer', tooltips=False)
+            if Check.labels(p, 'mer', tooltips=False):
+                mer_names = Check.labels(p, 'mer', tooltips=False)
             else:
                 mer_names = 'Мереология'
-            if Participants.query.get(input).sr_id:
+            if Participants.query.get(p).sr_id:
                 sr = Semantic_roles.query.get(Participants.query.get(input).sr_id).sr
             else:
                 sr = ''
@@ -618,20 +620,20 @@ def editing_autocomplete():
             participants = []
             for p in [i.target_id for i in Template_relations.query.filter_by(templ_id=input, type=9).all()]:
                 taxonomy_ids = [i.target_id for i in Participant_relations.query.filter_by(participant_id=p, type=1).all()]
-                if Check.labels(input, 'tax', tooltips=False):
-                    tax_names = Check.labels(input, 'tax', tooltips=False)
+                if Check.labels(p, 'tax', tooltips=False):
+                    tax_names = Check.labels(p, 'tax', tooltips=False)
                 else:
                     tax_names = 'Таксономия'
                 topology_ids = [i.target_id for i in
                                 Participant_relations.query.filter_by(participant_id=p, type=2).all()]
-                if Check.labels(input, 'top', tooltips=False):
-                    top_names = Check.labels(input, 'top', tooltips=False)
+                if Check.labels(p, 'top', tooltips=False):
+                    top_names = Check.labels(p, 'top', tooltips=False)
                 else:
                     top_names = 'Топология'
                 mereology_ids = [i.target_id for i in
                                 Participant_relations.query.filter_by(participant_id=p, type=5).all()]
-                if Check.labels(input, 'mer', tooltips=False):
-                    mer_names = Check.labels(input, 'mer', tooltips=False)
+                if Check.labels(p, 'mer', tooltips=False):
+                    mer_names = Check.labels(p, 'mer', tooltips=False)
                 else:
                     mer_names = 'Мереология'
                 if Participants.query.get(p).sr_id:
@@ -659,7 +661,8 @@ def editing_autocomplete():
                         'id': p
                     }
                 )
-            inst, beg, proc, fs, res, impl = ([] for i in range(6))
+            inst, beg, proc, fs, res, impl = (['Initial_state'], ['Beginning'], ['Process'],
+                                              ['Final_stage'], ['Result'], ['Implication'],)
             for e in [i.target_id for i in
                       Template_relations.query.filter_by(templ_id=input, type=2).\
                               join(Event_structure, Template_relations.target_id==Event_structure.ese_id).\
@@ -668,31 +671,26 @@ def editing_autocomplete():
                     parent = Event_structure_relations.query.filter_by(ese_id=e, type=1).first().target_id
                 else:
                     parent = None
+                if Event_structure_relations.query.filter_by(ese_id=e, type=1).first():
+                    rank = Event_structure_relations.query.filter_by(ese_id=e, type=1).first().target_id
+                else:
+                    parent = None
                 if Event_structure.query.get(e).type == 1:
-                    inst.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank))
+                    inst.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank, Event_structure.query.get(e).status))
                 elif Event_structure.query.get(e).type == 2:
-                    beg.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank))
+                    beg.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank, Event_structure.query.get(e).status))
                 elif Event_structure.query.get(e).type == 3:
-                    proc.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank))
+                    proc.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank, Event_structure.query.get(e).status))
                 elif Event_structure.query.get(e).type == 4:
-                    fs.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank))
+                    fs.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank, Event_structure.query.get(e).status))
                 elif Event_structure.query.get(e).type == 5:
-                    res.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank))
+                    res.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank, Event_structure.query.get(e).status))
                 elif Event_structure.query.get(e).type == 6:
-                    impl.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank))
-            ese = {
-                'Initial_state': inst,
-                'Beginning': beg,
-                'Process': proc,
-                'Final_stage': fs,
-                'Result': res,
-                'Implication': impl
-            }
+                    impl.append((Event_structure.query.get(e).ese, parent, Event_structure.query.get(e).rank, 2))
             response = jsonify(
                 {
                     'participants': participants,
-                    'ese': ese,
-                    'example': Examples.query.get(Template_relations.query.filter_by(templ_id=input, type=3).first().target_id).example
+                    'ese': [inst, beg, proc, fs, res, impl]
                 }
             )
         return make_response(response, 200)
