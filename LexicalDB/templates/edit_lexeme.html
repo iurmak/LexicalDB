@@ -183,24 +183,22 @@
                             <thead>
                                 <tr>
                                     <th scope="col">ID</th>
+                                    <th scope="col">Краткое значение</th>
                                     <th scope="col">Участники</th>
                                     <th scope="col">Структура события</th>
-                                    <th scope="col">Пример</th>
-                                    <th scope="col">Управление</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for m in Meanings.query.filter_by(lex_id=lex_id).all() %}
                                     <tr>
-                                        <td><a class="link-primary" target="_self" href="{{ url_for('edit_meaning', m_id=m.m_id) }}">{{ m.m_id }}</a></td>
+                                        <td>{{ m.m_id }}</td>
+                                        <td><a class="link-primary" target="_self" href="{{ url_for('edit_meaning', m_id=m.m_id) }}">{% if m.meaning %}{{ Amend.md(m.meaning) }}{% else %}<em>Редактировать</em>{% endif %}</a></td>
                                         <td>
                                             {% for p in Participant_relations.query.filter_by(target_id=m.m_id, type=4).all() %}
                                                 <span>{{ Participants.query.get(p.participant_id).participant }}</span><br>
                                             {% endfor %}
                                         </td>
-                                        <td>что-то про структуру события</td>
-                                        <td>?</td>
-                                        <td>{{ Amend.md(m.government) }}</td>
+                                        <td>{{ Check.ese(m.m_id, 'm') }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -225,10 +223,10 @@
             }
             $(`#forms`).append(
             `
-            <div class="col-12 row align-items-center justify-content-center g-2" id="form_${current_num}">
+            <div class="col-12 row align-items-center justify-content-center g-2" id="full_form_${current_num}">
                 <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
                     <div>
-                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="form_${current_num}.remove()">
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="full_form_${current_num}.remove()">
                             Удалить
                         </button>
                     </div>
@@ -273,10 +271,10 @@
             }
             $(`#comments`).append(
             `
-            <div class="col-12 row align-items-center justify-content-center g-2" id="comment_${current_num}">
+            <div class="col-12 row align-items-center justify-content-center g-2" id="full_comment_${current_num}">
                 <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
                     <div>
-                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="comment_${current_num}.remove()">
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="full_comment_${current_num}.remove()">
                             Удалить
                         </button>
                     </div>
@@ -304,10 +302,10 @@
             }
             $(`#links`).append(
             `
-            <div class="col-12 row align-items-center justify-content-center g-2" id="link_${current_num}">
+            <div class="col-12 row align-items-center justify-content-center g-2" id="full_link_${current_num}">
                 <div class="col-12 col-lg-2 row align-items-center justify-content-center g-2">
                     <div>
-                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="link_${current_num}.remove()">
+                        <button type="button" class="btn btn-sm btn-outline btn-outline-danger" onclick="full_link_${current_num}.remove()">
                             Удалить
                         </button>
                     </div>

@@ -215,7 +215,7 @@ def add_user():
         Emails.send('Создание профиля',
                     f'''
                     <p>Здравствуйте. Для вас создан профиль на сайте
-                    <a href="{url_for('about', _external=True)}">{url_for('about', _external=True)}</a>.
+                    <a href="{url_for('index', _external=True)}">{url_for('index', _external=True)}</a>.
                     </p><p>Пароль для <a href="{url_for('login', _external=True)}">входа</a>: 
                     <b>{password}</b>.
                     </p><p>Если это письмо пришло вам по ошибке, проигнорируйте его.</p>''',

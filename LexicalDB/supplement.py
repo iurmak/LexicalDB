@@ -32,6 +32,7 @@ class Amend:
             Example_to_meaning.query.filter_by(m_id=self).delete()
             Participant_relations.query.filter_by(target_id=self, type=4).delete()
             Lexeme_relations.query.filter_by(target_id=self, type=1).delete()
+            Template_relations.query.filter_by(target_id=self, type=4).delete()
             for ese in Event_structure_relations.query.filter_by(target_id=self, type=2).all():
                 Event_structure.query.filter_by(ese_id=ese.ese_id).delete()
             Event_structure_relations.query.filter_by(target_id=self, type=2).delete()
@@ -69,9 +70,9 @@ class Amend:
                 for ese in Event_structure_relations.query.filter_by(target_id=m_id, type=2).all():
                     Event_structure.query.filter_by(ese_id=ese.ese_id).delete()
                 Event_structure_relations.query.filter_by(target_id=m_id, type=2).delete()
-            for l in Lexeme_relations.query.filter_by(lex_id=self).all():
-                if l.type in [4, 5]:
-                    Posts.query.filter_by(post_id=l.target_id).delete()
+            Forms.query.filter_by(lex_id=self).delete()
+            for p in Lexeme_relations.query.filter(Lexeme_relations.lex_id.in_([4,5])).filter_by(lex_id=self).all():
+                Posts.query.filter_by(post_id=p.target_id).delete()
             Lexeme_relations.query.filter_by(lex_id=self).delete()
             Lexemes.query.filter_by(lex_id=self).delete()
             db.session.commit()
@@ -169,6 +170,37 @@ class Check():
                 return [int(i) for i in what.split(by)]
             return what.split(by)
         return []
+
+    def ese(id, type, tooltips=True):
+        if type == 'm':
+            type = 2
+        elif type == 't':
+            type = 1
+        else:
+            return ''
+        names = {
+            1: 'Начальное состояние',
+            2: 'Начало действия',
+            3: 'Процесс',
+            4: 'Завершение действия',
+            5: 'Результат',
+            6: 'Следствие'
+        }
+        current = []
+        for ese in Event_structure_relations.query.filter_by(type=type, target_id=id).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).order_by(Event_structure.type.asc()).all():
+            if Event_structure.query.get(ese.ese_id):
+                if Event_structure.query.get(ese.ese_id).type == 6:
+                    ass_pres = ''
+                elif Event_structure.query.get(ese.ese_id).status == 1:
+                    ass_pres = ' (А)'
+                elif Event_structure.query.get(ese.ese_id).status == 2:
+                    ass_pres = ' (П)'
+                current.append((names.get(Event_structure.query.get(ese.ese_id).type) + ass_pres, Event_structure.query.get(ese.ese_id).ese.replace('"', '&quot;')))
+        if current:
+            return Markup(', '.join([f'''<abbr style="" data-bs-toggle="tooltip" title="{c[1]}">{c[0]}</abbr>''' for c in current]))
+        else:
+            return ''
+
     def labels(self, type, tooltips=True):
         if type == 'tax':
             labels = [(Labels.query.get(l.target_id).l, Labels.query.get(l.target_id).decode, Labels.query.get(l.target_id).l_id) for l in
@@ -187,34 +219,34 @@ class Check():
         if labels and type not in ['tax', 'top', 'mer']:
             if tooltips:
                 labels = [
-                    f'<abbr style="font-variant-caps: small-caps" data-bs-toggle="tooltip" title="{l[1]}"><b>{l[0]}</b></abbr>'
+                    f'<abbr style="" data-bs-toggle="tooltip" title="{l[1]}"><b>{l[0]}</b></abbr>'
                     for l in labels]
             else:
-                labels = [f'<span style="font-variant-caps: small-caps"><b>{l[0]}</b></span>' for l in labels]
+                labels = [f'<span style=""><b>{l[0]}</b></span>' for l in labels]
             labels = f"""<span>{', '.join(labels)}</span>"""
         elif labels and type == 'tax':
             if tooltips:
                 labels = [
-                    f'''<abbr style="font-variant-caps: small-caps" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
+                    f'''<abbr style="" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
                     for l in labels]
             else:
-                labels = [f'<span style="font-variant-caps: small-caps"><b>{l[0]}</b></span>' for l in labels]
+                labels = [f'<span style=""><b>{l[0]}</b></span>' for l in labels]
             labels = f"""<span>{', '.join(labels)}</span>"""
         elif labels and type == 'top':
             if tooltips:
                 labels = [
-                    f'''<abbr style="font-variant-caps: small-caps" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
+                    f'''<abbr style="" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
                     for l in labels]
             else:
-                labels = [f'<span style="font-variant-caps: small-caps"><b>{l[0]}</b></span>' for l in labels]
+                labels = [f'<span style=""><b>{l[0]}</b></span>' for l in labels]
             labels = f"""<span>{', '.join(labels)}</span>"""
         elif labels and type == 'mer':
             if tooltips:
                 labels = [
-                    f'''<abbr style="font-variant-caps: small-caps" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
+                    f'''<abbr style="" data-bs-toggle="tooltip" title="{l[1]}"><a href="" target="_blank">{l[0]}</a></abbr>'''
                     for l in labels]
             else:
-                labels = [f'<span style="font-variant-caps: small-caps"><b>{l[0]}</b></span>' for l in labels]
+                labels = [f'<span style=""><b>{l[0]}</b></span>' for l in labels]
             labels = f"""<span>{', '.join(labels)}</span>"""
         else:
             return ''

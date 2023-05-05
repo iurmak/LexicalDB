@@ -27,6 +27,7 @@
                         <th scope="col">ID</th>
                         <th scope="col">Название</th>
                         <th scope="col">Основан на</th>
+                        <th scope="col">Значения (лексема)</th>
                         <th scope="col">Участники</th>
                         <th scope="col">Структура события</th>
                         <th scope="col">Создан</th>
@@ -39,15 +40,22 @@
                                 <td><a class="link-primary" target="_self" href="{{ url_for('edit_template', templ_id=template.templ_id) }}">{{ template.templ }}</a></td>
                                 <td>
                                     {% for t in Template_relations.query.filter_by(target_id=template.templ_id, type=1).all() %}
-                                        <span>{{ Templates.query.get(t.templ_id).templ }}</span><br>
+                                        <span><a href="{{ url_for('edit_template', templ_id=t.target_id) }}">{{ Templates.query.get(t.templ_id).templ }}</a></span><br>
                                     {% endfor %}
+                                </td>
+                                <td>
+                                    <ul class="list-group">
+                                        {% for m in Template_relations.query.filter_by(templ_id=template.templ_id, type=4).all() %}
+                                            <li class="list-group-item">{% if Meanings.query.get(m.target_id).meaning %}<a href="{{ url_for('edit_meaning', m_id=m.target_id) }}">{{ Meanings.query.get(m.target_id).meaning }}</a> (<a href="{{ url_for('edit_lexeme', lex_id=Meanings.query.get(m.target_id).lex_id) }}">{{ Forms.query.filter_by(lex_id=Meanings.query.get(m.target_id).lex_id).first().form }}</a>){% else %}(<a href="{{ url_for('edit_lexeme', lex_id=Meanings.query.get(m.target_id).lex_id) }}">{{ Forms.query.filter_by(lex_id=Meanings.query.get(m.target_id).lex_id).first().form }}</a>){% endif %}</li>
+                                        {% endfor %}
+                                    </ul>
                                 </td>
                                 <td>
                                     {% for p in Template_relations.query.filter_by(templ_id=template.templ_id, type=9).all() %}
                                         <span>{{ Participants.query.get(p.target_id).participant }}</span><br>
                                     {% endfor %}
                                 </td>
-                                <td>что-то про структуру события</td>
+                                <td>{{ Check.ese(template.templ_id, 't') }}</td>
                                 <td>{{ Amend.username(template.created_by) }}, {{ Amend.datetime(template.datetime) }}</td>
                             </tr>
                     {% endfor %}
@@ -55,16 +63,16 @@
             </table>
         </div>
         {% if items.has_prev or items.has_next %}
-            <div class="container text-center">
+            <div class="container text-center mb-2">
                 <div class="row justify-content-center">
                     {% if items.has_prev %}
                         <div class="col-4">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('profiles', page=items.prev_num) }}">Назад</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('templates', page=items.prev_num) }}">Назад</a>
                         </div>
                     {% endif %}
                     {% if items.has_next %}
                         <div class="col-4">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('profiles', page=items.next_num) }}">Далее</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('templates', page=items.next_num) }}">Далее</a>
                         </div>
                     {% endif %}
                 </div>

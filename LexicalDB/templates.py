@@ -3,7 +3,7 @@ from flask import render_template, request, url_for, session, make_response, jso
 from LexicalDB.supplement import Emails, Amend, Check
 from LexicalDB.models import db, Users, Semantic_roles, Participants, Participant_relations,\
     Event_structure, Templates, Template_relations,\
-    Examples, Event_structure_relations, Labels
+    Examples, Event_structure_relations, Labels, Meanings, Forms
 from itsdangerous import URLSafeSerializer
 from re import sub, compile
 from sqlalchemy import not_
@@ -221,7 +221,8 @@ def edit_template(templ_id):
                                        rank=request.form.get(f'rank_{event_structure_part[-1]}_{i.split("_")[-1]}'),
                                        type=event_structure_part[0],
                                        status=request.form.get(
-                                           f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}')
+                                           f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}'),
+                                       controllable=request.form.get(f'control_{event_structure_part[-1]}_{i.split("_")[-1]}')
                                        )
                 db.session.add(item)
                 db.session.commit()
@@ -230,22 +231,14 @@ def edit_template(templ_id):
                         Event_structure_relations(
                             ese_id=item.ese_id,
                             target_id=request.form.get(f'is_child_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                            type=1
-                        )
-                    )
-                else:
-                    db.session.add(
-                        Event_structure_relations(
-                            ese_id=item.ese_id,
-                            target_id=templ_id,
-                            type=1
+                            type=3
                         )
                     )
                 db.session.add(
-                    Template_relations(
-                        templ_id=templ_id,
-                        target_id=item.ese_id,
-                        type=2
+                    Event_structure_relations(
+                        ese_id=item.ese_id,
+                        target_id=templ_id,
+                        type=1
                     )
                 )
                 db.session.commit()
@@ -256,24 +249,17 @@ def edit_template(templ_id):
                     {'ese': no_spaces_at_edges.sub('', request.form.get(i)),
                      'rank': request.form.get(f'rank_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
                      'status': request.form.get(f'status_ese_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
+                     'controllable': request.form.get(f'control_existent_{event_structure_part[-1]}_{i.split("_")[-1]}')
                      }
                 )
                 db.session.commit()
-                Event_structure_relations.query.filter_by(ese_id=i_id, type=1).delete()
+                Event_structure_relations.query.filter_by(ese_id=i_id, type=3).delete()
                 if request.form.get(f'is_child_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'):
                     db.session.add(
                         Event_structure_relations(
                             ese_id=i_id,
                             target_id=request.form.get(f'is_child_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                            type=1
-                        )
-                    )
-                else:
-                    db.session.add(
-                        Event_structure_relations(
-                            ese_id=i_id,
-                            target_id=templ_id,
-                            type=1
+                            type=3
                         )
                     )
                 db.session.commit()
@@ -470,7 +456,8 @@ def new_template():
                 item = Event_structure(ese=no_spaces_at_edges.sub('', request.form.get(i)),
                                        rank=request.form.get(f'rank_{event_structure_part[-1]}_{i.split("_")[-1]}'),
                                        type=event_structure_part[0],
-                                       status=request.form.get(f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}')
+                                       status=request.form.get(f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}', '1'),
+                                       controllable=request.form.get(f'control_{event_structure_part[-1]}_{i.split("_")[-1]}')
                                        )
                 db.session.add(item)
                 db.session.commit()
@@ -479,22 +466,14 @@ def new_template():
                         Event_structure_relations(
                             ese_id=item.ese_id,
                             target_id=request.form.get(f'is_child_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                            type=1
-                        )
-                    )
-                else:
-                    db.session.add(
-                        Event_structure_relations(
-                            ese_id=item.ese_id,
-                            target_id=template.templ_id,
-                            type=1
+                            type=3
                         )
                     )
                 db.session.add(
-                    Template_relations(
-                        templ_id=template.templ_id,
-                        target_id=item.ese_id,
-                        type=2
+                    Event_structure_relations(
+                        ese_id=item.ese_id,
+                        target_id=template.templ_id,
+                        type=1
                     )
                 )
                 db.session.commit()
@@ -519,7 +498,10 @@ def templates(page=1):
                                templates=templates,
                                items=page_of_templates,
                                Participants=Participants,
-                               Amend=Amend
+                               Meanings=Meanings,
+                               Forms=Forms,
+                               Amend=Amend,
+                               Check=Check
                                )
     elif request.method == 'POST':
         if request.form.get('query'):
@@ -582,19 +564,19 @@ def editing_autocomplete():
             if Check.labels(p, 'tax', tooltips=False):
                 tax_names = Check.labels(p, 'tax', tooltips=False)
             else:
-                tax_names = 'Таксономия'
+                tax_names = 'Добавить'
             topology_ids = [i.target_id for i in
                             Participant_relations.query.filter_by(participant_id=p, type=2).all()]
             if Check.labels(p, 'top', tooltips=False):
                 top_names = Check.labels(p, 'top', tooltips=False)
             else:
-                top_names = 'Топология'
+                top_names = 'Добавить'
             mereology_ids = [i.target_id for i in
                              Participant_relations.query.filter_by(participant_id=p, type=5).all()]
             if Check.labels(p, 'mer', tooltips=False):
                 mer_names = Check.labels(p, 'mer', tooltips=False)
             else:
-                mer_names = 'Мереология'
+                mer_names = 'Добавить'
             if Participants.query.get(p).sr_id:
                 sr = Semantic_roles.query.get(Participants.query.get(input).sr_id).sr
             else:
@@ -623,19 +605,19 @@ def editing_autocomplete():
                 if Check.labels(p, 'tax', tooltips=False):
                     tax_names = Check.labels(p, 'tax', tooltips=False)
                 else:
-                    tax_names = 'Таксономия'
+                    tax_names = 'Добавить'
                 topology_ids = [i.target_id for i in
                                 Participant_relations.query.filter_by(participant_id=p, type=2).all()]
                 if Check.labels(p, 'top', tooltips=False):
                     top_names = Check.labels(p, 'top', tooltips=False)
                 else:
-                    top_names = 'Топология'
+                    top_names = 'Добавить'
                 mereology_ids = [i.target_id for i in
                                 Participant_relations.query.filter_by(participant_id=p, type=5).all()]
                 if Check.labels(p, 'mer', tooltips=False):
                     mer_names = Check.labels(p, 'mer', tooltips=False)
                 else:
-                    mer_names = 'Мереология'
+                    mer_names = 'Добавить'
                 if Participants.query.get(p).sr_id:
                     sr = Semantic_roles.query.get(Participants.query.get(p).sr_id).sr
                 else:
@@ -663,16 +645,10 @@ def editing_autocomplete():
                 )
             inst, beg, proc, fs, res, impl = (['Initial_state'], ['Beginning'], ['Process'],
                                               ['Final_stage'], ['Result'], ['Implication'],)
-            for e in [i.target_id for i in
-                      Template_relations.query.filter_by(templ_id=input, type=2).\
-                              join(Event_structure, Template_relations.target_id==Event_structure.ese_id).\
-                              order_by(Event_structure.rank.asc()).all()]:
+            for e in [i.ese_id for i in
+                      Event_structure_relations.query.filter_by(type=1, target_id=input).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).order_by(Event_structure.type.asc()).all()]:
                 if Event_structure_relations.query.filter_by(ese_id=e, type=1).first():
                     parent = Event_structure_relations.query.filter_by(ese_id=e, type=1).first().target_id
-                else:
-                    parent = None
-                if Event_structure_relations.query.filter_by(ese_id=e, type=1).first():
-                    rank = Event_structure_relations.query.filter_by(ese_id=e, type=1).first().target_id
                 else:
                     parent = None
                 if Event_structure.query.get(e).type == 1:

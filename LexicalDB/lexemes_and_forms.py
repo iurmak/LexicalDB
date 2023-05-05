@@ -61,7 +61,7 @@ def edit_lexeme(lex_id):
                          i.startswith('delete_form_') and request.form.get(i)]
         for form in forms_to_delete:
             Forms.query.filter_by(form_id=form).delete()
-            Forms.query.filter_by(parent_id=form).delete()
+            Forms.query.filter_by(lex_id=form).delete()
             db.session.commit()
 
         comments_to_delete = [request.form.get(i) for i in request.form if
@@ -297,7 +297,8 @@ def new_meaning(lex_id):
             status = 0
         meaning = Meanings(
             lex_id=lex_id,
-            status=status
+            status=status,
+            meaning=request.form.get('short_meaning', '')
         )
         db.session.add(meaning)
         db.session.commit()
@@ -467,7 +468,10 @@ def new_meaning(lex_id):
                       part.startswith(f'{event_structure_part[-1]}_') and request.form.get(part)]:
                 item = Event_structure(ese=no_spaces_at_edges.sub('', request.form.get(i)),
                                        rank=request.form.get(f'rank_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                                       type=event_structure_part[0], status=request.form.get(f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}')
+                                       type=event_structure_part[0],
+                                       status=request.form.get(f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}'),
+                                       controllable=request.form.get(
+                                           f'control_{event_structure_part[-1]}_{i.split("_")[-1]}')
                                        )
                 db.session.add(item)
                 db.session.commit()
@@ -476,7 +480,7 @@ def new_meaning(lex_id):
                         Event_structure_relations(
                             ese_id=item.ese_id,
                             target_id=request.form.get(f'is_child_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                            type=1
+                            type=3
                         )
                     )
                 db.session.add(
@@ -540,7 +544,7 @@ def edit_meaning(m_id):
             based_on = int(request.form.get('based_on'))
         else:
             based_on = None
-
+        m.meaning = request.form.get('short_meaning', '')
         for e in [i for i in request.form if i.startswith('existing_example')]:
             e_id = e.split('_')[-1]
             Examples.query.filter_by(example_id=e_id).update(
@@ -745,7 +749,9 @@ def edit_meaning(m_id):
                 item = Event_structure(ese=no_spaces_at_edges.sub('', request.form.get(i)),
                                        rank=request.form.get(f'rank_{event_structure_part[-1]}_{i.split("_")[-1]}'),
                                        type=event_structure_part[0], status=request.form.get(
-                        f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}')
+                        f'status_ese_{event_structure_part[-1]}_{i.split("_")[-1]}'),
+                                       controllable=request.form.get(
+                                           f'control_{event_structure_part[-1]}_{i.split("_")[-1]}')
                                        )
                 db.session.add(item)
                 db.session.commit()
@@ -754,15 +760,7 @@ def edit_meaning(m_id):
                         Event_structure_relations(
                             ese_id=item.ese_id,
                             target_id=request.form.get(f'is_child_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                            type=1
-                        )
-                    )
-                else:
-                    db.session.add(
-                        Event_structure_relations(
-                            ese_id=item.ese_id,
-                            target_id=based_on,
-                            type=1
+                            type=3
                         )
                     )
                 db.session.add(
@@ -779,24 +777,17 @@ def edit_meaning(m_id):
                 Event_structure.query.filter_by(ese_id=i_id, type=event_structure_part[0]).update(
                     {'ese': no_spaces_at_edges.sub('', request.form.get(i)),
                      'rank': request.form.get(f'rank_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                     'status': request.form.get(f'status_ese_existent_{event_structure_part[-1]}_{i.split("_")[-1]}')}
+                     'status': request.form.get(f'status_ese_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
+                     'controllable': request.form.get(f'control_existent_{event_structure_part[-1]}_{i.split("_")[-1]}')}
                 )
                 db.session.commit()
-                Event_structure_relations.query.filter_by(ese_id=i_id, type=1).delete()
+                Event_structure_relations.query.filter_by(ese_id=i_id, type=3).delete()
                 if request.form.get(f'is_child_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'):
                     db.session.add(
                         Event_structure_relations(
                             ese_id=i_id,
                             target_id=request.form.get(f'is_child_existent_{event_structure_part[-1]}_{i.split("_")[-1]}'),
-                            type=1
-                        )
-                    )
-                else:
-                    db.session.add(
-                        Event_structure_relations(
-                            ese_id=i_id,
-                            target_id=int(request.form.get('based_on')),
-                            type=1
+                            type=3
                         )
                     )
                 db.session.commit()

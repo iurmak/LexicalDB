@@ -43,4 +43,4 @@ def download_db():
     user_id = URLSafeSerializer(app.config['SECRET_KEY'], salt='login').loads(session.get('user'))
     if Users.query.get(user_id).role_id != 3:
         return Check.status()
-    return send_file('lex_typ.db', as_attachment=True)
+    return send_file('lex_typ old.db', as_attachment=True)

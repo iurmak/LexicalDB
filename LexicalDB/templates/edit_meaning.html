@@ -10,13 +10,19 @@
                     <div class="form-floating">
                         <select form="meaning" class="form-select" id="based_on" name="based_on">
                             <option value="">отсутствует</option>
-                            {% for t in Templates.query.all() %}
+                            {% for t in Templates.query.order_by(Templates.templ.asc()).all() %}
                                 <option value="{{ t.templ_id }}" {% if Template_relations.query.filter_by(target_id=m.m_id, type=4).first() and t.templ_id == Template_relations.query.filter_by(target_id=m.m_id, type=4).first().templ_id %}selected{% endif %}>{{ t.templ }}</option>
                             {% endfor %}
                         </select>
                         <label for="based_on">
                             Родительский шаблон
                         </label>
+                    </div>
+                </div>
+                <div class="col-12 mb-2">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="short_meaning" name="short_meaning" placeholder="meaning" value="{{ m.meaning }}" form="meaning">
+                        <label for="short_meaning">Краткая формулировка значения</label>
                     </div>
                 </div>
             </div>
@@ -116,6 +122,9 @@
                                 </div>
                             </div>
                             <div class="col">
+                                <div class="col-12 align-items-center text-center">
+                                    <span style="text-decoration-line: none; font-variant: small-caps">Мереология</span>
+                                </div>
                                 <div class="col-12 align-items-center text-center mb-1">
                                     <a class="text-primary h5"
                                        href="javascript:;"
@@ -123,12 +132,12 @@
                                        data-bs-toggle="dropdown"
                                        data-bs-auto-close="outside"
                                        aria-expanded="false"
-                                       style="text-decoration-line: none; font-variant: small-caps"
+                                       style="text-decoration-line: none; font-size: smaller"
                                     >
                                         {% if Check.labels(p.participant_id, 'mer', tooltips=False) %}
                                             <span>{{ Check.labels(p.participant_id, 'mer', tooltips=False) }}</span>
                                         {% else %}
-                                            <span>Мереология</span>
+                                            <span>Добавить</span>
                                         {% endif %}
                                     </a>
                                     <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
@@ -156,6 +165,9 @@
                                 </div>
                             </div>
                             <div class="col">
+                                <div class="col-12 align-items-center text-center">
+                                    <span style="text-decoration-line: none; font-variant: small-caps">Таксономия</span>
+                                </div>
                                 <div class="col-12 align-items-center text-center mb-1">
                                     <a class="text-primary h5"
                                        href="javascript:;"
@@ -163,12 +175,12 @@
                                        data-bs-toggle="dropdown"
                                        data-bs-auto-close="outside"
                                        aria-expanded="false"
-                                       style="text-decoration-line: none; font-variant: small-caps"
+                                       style="text-decoration-line: none; font-size: smaller"
                                     >
                                         {% if Check.labels(p.participant_id, 'tax', tooltips=False) %}
                                             <span>{{ Check.labels(p.participant_id, 'tax', tooltips=False) }}</span>
                                         {% else %}
-                                            <span>Таксономия</span>
+                                            <span>Добавить</span>
                                         {% endif %}
                                     </a>
                                     <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
@@ -196,6 +208,9 @@
                                 </div>
                             </div>
                             <div class="col">
+                                <div class="col-12 align-items-center text-center">
+                                    <span style="text-decoration-line: none; font-variant: small-caps">Топология</span>
+                                </div>
                                 <div class="col-12 align-items-center text-center mb-1">
                                     <a class="text-primary h5"
                                        href="javascript:;"
@@ -203,12 +218,12 @@
                                        data-bs-toggle="dropdown"
                                        data-bs-auto-close="outside"
                                        aria-expanded="false"
-                                       style="text-decoration-line: none; font-variant: small-caps"
+                                       style="text-decoration-line: none; font-size: smaller"
                                     >
                                         {% if Check.labels(p.participant_id, 'top', tooltips=False) %}
                                             <span>{{ Check.labels(p.participant_id, 'top', tooltips=False) }}</span>
                                         {% else %}
-                                            <span>Топология</span>
+                                            <span>Добавить</span>
                                         {% endif %}
                                     </a>
                                     <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
@@ -251,6 +266,7 @@
                                     <select class="form-select" id="status_1" name="status_1" disabled>
                                         <option value="1"{% if Participants.query.get(p.participant_id).status == 1 %} selected{% endif %}>ядерный</option>
                                         <option value="2"{% if Participants.query.get(p.participant_id).status == 2 %} selected{% endif %}>периферийный</option>
+                                        <option value="3"{% if Participants.query.get(p.participant_id).status == 3 %} selected{% endif %}>инкорпорированный</option>
                                     </select>
                                     <label for="status_1">Этот участник</label>
                                 </div>
@@ -402,14 +418,24 @@
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=3).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_I_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
-                                <div class="col-12 col-xxl-8">
+                                <div class="col-12 col-xxl-2">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="control_existent_I_{{ i.ese_id }}" name="control_existent_I_{{ i.ese_id }}">
+                                            <option value="1" {% if Event_structure.query.get(i.ese_id).controllable == 1 %}selected{% endif %}>контролируемое</option>
+                                            <option value="2" {% if Event_structure.query.get(i.ese_id).controllable == 2 %}selected{% endif %}>неконтролируемое</option>
+                                            <option value="3" {% if Event_structure.query.get(i.ese_id).controllable == 3 %}selected{% endif %}>(не)контролируемое</option>
+                                        </select>
+                                        <label for="control_existent_I_{{ i.ese_id }}">Контролируемость</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-12 col-xxl-6">
                                     <div class="form-floating">
                                         <input type="text" class="form-control" id="existent_I_{{ i.ese_id }}"
                                                name="existent_I_{{ i.ese_id }}"
@@ -462,14 +488,24 @@
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=3).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_B_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
-                                <div class="col-12 col-xxl-8">
+                                <div class="col-12 col-xxl-2">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="control_existent_B_{{ i.ese_id }}" name="control_existent_B_{{ i.ese_id }}">
+                                            <option value="1" {% if Event_structure.query.get(i.ese_id).controllable == 1 %}selected{% endif %}>контролируемое</option>
+                                            <option value="2" {% if Event_structure.query.get(i.ese_id).controllable == 2 %}selected{% endif %}>неконтролируемое</option>
+                                            <option value="3" {% if Event_structure.query.get(i.ese_id).controllable == 3 %}selected{% endif %}>(не)контролируемое</option>
+                                        </select>
+                                        <label for="control_existent_B_{{ i.ese_id }}">Контролируемость</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-12 col-xxl-6">
                                     <div class="form-floating">
                                         <input type="text" class="form-control" id="existent_B_{{ i.ese_id }}"
                                                name="existent_B_{{ i.ese_id }}"
@@ -522,14 +558,24 @@
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=3).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_P_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
-                                <div class="col-12 col-xxl-8">
+                                <div class="col-12 col-xxl-2">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="control_existent_P_{{ i.ese_id }}" name="control_existent_P_{{ i.ese_id }}">
+                                            <option value="1" {% if Event_structure.query.get(i.ese_id).controllable == 1 %}selected{% endif %}>контролируемое</option>
+                                            <option value="2" {% if Event_structure.query.get(i.ese_id).controllable == 2 %}selected{% endif %}>неконтролируемое</option>
+                                            <option value="3" {% if Event_structure.query.get(i.ese_id).controllable == 3 %}selected{% endif %}>(не)контролируемое</option>
+                                        </select>
+                                        <label for="control_existent_P_{{ i.ese_id }}">Контролируемость</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-12 col-xxl-6">
                                     <div class="form-floating">
                                         <input type="text" class="form-control overflow-auto" id="existent_P_{{ i.ese_id }}"
                                                name="existent_P_{{ i.ese_id }}"
@@ -582,14 +628,24 @@
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=3).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_F_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
-                                <div class="col-12 col-xxl-8">
+                                <div class="col-12 col-xxl-2">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="control_existent_F_{{ i.ese_id }}" name="control_existent_F_{{ i.ese_id }}">
+                                            <option value="1" {% if Event_structure.query.get(i.ese_id).controllable == 1 %}selected{% endif %}>контролируемое</option>
+                                            <option value="2" {% if Event_structure.query.get(i.ese_id).controllable == 2 %}selected{% endif %}>неконтролируемое</option>
+                                            <option value="3" {% if Event_structure.query.get(i.ese_id).controllable == 3 %}selected{% endif %}>(не)контролируемое</option>
+                                        </select>
+                                        <label for="control_existent_F_{{ i.ese_id }}">Контролируемость</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-12 col-xxl-6">
                                     <div class="form-floating">
                                         <input type="text" class="form-control" id="existent_F_{{ i.ese_id }}"
                                                name="existent_F_{{ i.ese_id }}"
@@ -642,14 +698,24 @@
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=3).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_R_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
-                                <div class="col-12 col-xxl-8">
+                                <div class="col-12 col-xxl-2">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="control_existent_R_{{ i.ese_id }}" name="control_existent_R_{{ i.ese_id }}">
+                                            <option value="1" {% if Event_structure.query.get(i.ese_id).controllable == 1 %}selected{% endif %}>контролируемое</option>
+                                            <option value="2" {% if Event_structure.query.get(i.ese_id).controllable == 2 %}selected{% endif %}>неконтролируемое</option>
+                                            <option value="3" {% if Event_structure.query.get(i.ese_id).controllable == 3 %}selected{% endif %}>(не)контролируемое</option>
+                                        </select>
+                                        <label for="control_existent_R_{{ i.ese_id }}">Контролируемость</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-12 col-xxl-6">
                                     <div class="form-floating">
                                         <input type="text" class="form-control" id="existent_R_{{ i.ese_id }}"
                                                name="existent_R_{{ i.ese_id }}"
@@ -696,14 +762,24 @@
                                             <option value="">текущий</option>
                                             {% for t in Templates.query.all() %}
                                                 {% if t.templ_id != templ_id %}
-                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=1).first() %} selected{% endif %}>{{t.templ}}</option>
+                                                    <option value="{{ t.templ_id }}" {% if Event_structure_relations.query.filter_by(ese_id=i.ese_id, target_id=t.templ_id, type=3).first() %} selected{% endif %}>{{t.templ}}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
                                         <label for="is_child_existent_Impl_{{ i.ese_id }}">Родительский шаблон</label>
                                     </div>
                                 </div>
-                                <div class="col-12 col-xxl-8">
+                                <div class="col-12 col-xxl-2">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="control_existent_Impl_{{ i.ese_id }}" name="control_existent_Impl_{{ i.ese_id }}">
+                                            <option value="1" {% if Event_structure.query.get(i.ese_id).controllable == 1 %}selected{% endif %}>контролируемое</option>
+                                            <option value="2" {% if Event_structure.query.get(i.ese_id).controllable == 2 %}selected{% endif %}>неконтролируемое</option>
+                                            <option value="3" {% if Event_structure.query.get(i.ese_id).controllable == 3 %}selected{% endif %}>(не)контролируемое</option>
+                                        </select>
+                                        <label for="control_existent_Impl_{{ i.ese_id }}">Контролируемость</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-xxl-6">
                                     <div class="form-floating">
                                         <input type="text" class="form-control" id="existent_Impl_{{ i.ese_id }}"
                                                name="existent_Impl_{{ i.ese_id }}"
@@ -782,6 +858,9 @@
                         </div>
                     </div>
                     <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Мереология</span>
+                        </div>
                         <div class="col-12 align-items-center text-center mb-1">
                             <a class="text-primary h5"
                                href="javascript:;"
@@ -789,10 +868,10 @@
                                data-bs-toggle="dropdown"
                                data-bs-auto-close="outside"
                                aria-expanded="false"
-                               style="text-decoration-line: none; font-variant: small-caps"
+                               style="text-decoration-line: none; font-size: smaller"
                                id="mer_ls_${current_num}"
                             >
-                                <span>Мереология</span>
+                                <span>Добавить</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
                                 {% for l in Labels.query.filter_by(type=1).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
@@ -804,7 +883,7 @@
                                                    id="mer_${current_num}_{{ l.l_id }}"
                                                    name="mer_${current_num}_{{ l.l_id }}"
                                                    full_name="{{ l.l }}"
-                                                   onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
+                                                   onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Добавить')"
                                             >
                                             <label class="form-check-label"
                                                    for="mer_${current_num}_{{ l.l_id }}"
@@ -826,6 +905,9 @@
                         </div>
                     </div>
                     <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Таксономия</span>
+                        </div>
                         <div class="col-12 align-items-center text-center mb-1">
                             <a class="text-primary h5"
                                href="javascript:;"
@@ -833,10 +915,10 @@
                                data-bs-toggle="dropdown"
                                data-bs-auto-close="outside"
                                aria-expanded="false"
-                               style="text-decoration-line: none; font-variant: small-caps"
+                               style="text-decoration-line: none; font-size: smaller"
                                id="tax_ls_${current_num}"
                             >
-                                <span>Таксономия</span>
+                                <span>Добавить</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
                                 {% for l in Labels.query.filter_by(type=2).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
@@ -848,7 +930,7 @@
                                                    id="tax_${current_num}_{{ l.l_id }}"
                                                    name="tax_${current_num}_{{ l.l_id }}"
                                                    full_name="{{ l.l }}"
-                                                   onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                                   onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Добавить')"
                                             >
                                             <label class="form-check-label"
                                                    for="tax_${current_num}_{{ l.l_id }}"
@@ -870,6 +952,9 @@
                         </div>
                     </div>
                     <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Топология</span>
+                        </div>
                         <div class="col-12 align-items-center text-center mb-1">
                             <a class="text-primary h5"
                                href="javascript:;"
@@ -877,10 +962,10 @@
                                data-bs-toggle="dropdown"
                                data-bs-auto-close="outside"
                                aria-expanded="false"
-                               style="text-decoration-line: none; font-variant: small-caps"
+                               style="text-decoration-line: none; font-size: smaller"
                                id="top_ls_${current_num}"
                             >
-                                <span>Топология</span>
+                                <span>Добавить</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
                                 {% for l in Labels.query.filter_by(type=3).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
@@ -892,7 +977,7 @@
                                                    id="top_${current_num}_{{ l.l_id }}"
                                                    name="top_${current_num}_{{ l.l_id }}"
                                                    full_name="{{ l.l }}"
-                                                   onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
+                                                   onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Добавить')"
                                             >
                                             <label class="form-check-label"
                                                    for="top_${current_num}_{{ l.l_id }}"
@@ -927,6 +1012,7 @@
                             <select class="form-select" id="status_${current_num}" name="status_${current_num}">
                                 <option selected value="1">ядерный</option>
                                 <option value="2">периферийный</option>
+                                <option value="3">инкорпорированный</option>
                             </select>
                             <label for="status_${current_num}">Этот участник</label>
                         </div>
@@ -1009,6 +1095,9 @@
                                     </div>
                                 </div>
                                 <div class="col">
+                                    <div class="col-12 align-items-center text-center">
+                                        <span style="text-decoration-line: none; font-variant: small-caps">Мереология</span>
+                                    </div>
                                     <div class="col-12 align-items-center text-center mb-1">
                                         <a class="text-primary h5"
                                            href="javascript:;"
@@ -1016,7 +1105,7 @@
                                            data-bs-toggle="dropdown"
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
-                                           style="text-decoration-line: none; font-variant: small-caps"
+                                           style="text-decoration-line: none; font-size: smaller"
                                            id="mer_ls_${current_num}"
                                         >
                                             ${items['mer_names']}
@@ -1031,7 +1120,7 @@
                                                                id="mer_${current_num}_{{ l.l_id }}"
                                                                name="mer_${current_num}_{{ l.l_id }}"
                                                                full_name="{{ l.l }}"
-                                                               onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
+                                                               onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Добавить')"
                                                         >
                                                         <label class="form-check-label"
                                                                for="mer_${current_num}_{{ l.l_id }}"
@@ -1053,6 +1142,9 @@
                                     </div>
                                 </div>
                                 <div class="col">
+                                    <div class="col-12 align-items-center text-center">
+                                        <span style="text-decoration-line: none; font-variant: small-caps">Таксономия</span>
+                                    </div>
                                     <div class="col-12 align-items-center text-center mb-1">
                                         <a class="text-primary h5"
                                            href="javascript:;"
@@ -1060,7 +1152,7 @@
                                            data-bs-toggle="dropdown"
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
-                                           style="text-decoration-line: none; font-variant: small-caps"
+                                           style="text-decoration-line: none; font-size: smaller"
                                            id="tax_ls_${current_num}"
                                         >
                                             ${items['tax_names']}
@@ -1075,7 +1167,7 @@
                                                                id="tax_${current_num}_{{ l.l_id }}"
                                                                name="tax_${current_num}_{{ l.l_id }}"
                                                                full_name="{{ l.l }}"
-                                                               onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                                               onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Добавить')"
                                                         >
                                                         <label class="form-check-label"
                                                                for="tax_${current_num}_{{ l.l_id }}"
@@ -1097,6 +1189,9 @@
                                     </div>
                                 </div>
                                 <div class="col">
+                                    <div class="col-12 align-items-center text-center">
+                                        <span style="text-decoration-line: none; font-variant: small-caps">Топология</span>
+                                    </div>
                                     <div class="col-12 align-items-center text-center mb-1">
                                         <a class="text-primary h5"
                                            href="javascript:;"
@@ -1104,7 +1199,7 @@
                                            data-bs-toggle="dropdown"
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
-                                           style="text-decoration-line: none; font-variant: small-caps"
+                                           style="text-decoration-line: none; font-size: smaller"
                                            id="top_ls_${current_num}"
                                         >
                                             ${items['top_names']}
@@ -1119,7 +1214,7 @@
                                                                id="top_${current_num}_{{ l.l_id }}"
                                                                name="top_${current_num}_{{ l.l_id }}"
                                                                full_name="{{ l.l }}"
-                                                               onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
+                                                               onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Добавить')"
                                                         >
                                                         <label class="form-check-label"
                                                                for="top_${current_num}_{{ l.l_id }}"
@@ -1155,6 +1250,7 @@
                                         <select class="form-select" id="status_${current_num}" name="status_${current_num}">
                                             <option selected value="1">ядерный</option>
                                             <option value="2">периферийный</option>
+                                            <option value="3">инкорпорированный</option>
                                         </select>
                                         <label for="status_${current_num}">Этот участник</label>
                                     </div>
@@ -1241,7 +1337,17 @@
                         <label for="is_child_${type}_${current_num}">Родительский шаблон</label>
                     </div>
                 </div>
-                <div class="col-12 col-xl-8">
+                <div class="col-12 col-xxl-2">
+                    <div class="form-floating">
+                        <select class="form-select" id="control_${type}_${current_num}" name="control_${type}_${current_num}">
+                            <option value="1">контролируемое</option>
+                            <option value="2">неконтролируемое</option>
+                            <option value="3">(не)контролируемое</option>
+                        </select>
+                        <label for="control_${type}_${current_num}">Контролируемость</label>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-12 col-xxl-6">
                     <div class="form-floating">
                         <input type="text" class="form-control" id="${type}_${current_num}"
                                name="${type}_${current_num}"

@@ -44,7 +44,7 @@ class Participants(db.Model):
     participant = db.Column(db.Text, unique=False)
     sr_id = db.Column(db.Integer, db.ForeignKey(Semantic_roles.sr_id))
     other = db.Column(db.Text, unique=True)
-    status = db.Column(db.Integer) #1 -- core, 2 -- peripheral
+    status = db.Column(db.Integer) #1 -- core, 2 -- peripheral, 3 -- инкорпорированный
     type = db.Column(db.Integer, nullable=False, default=1)  # 1 -- from template, 2 -- from meanings
 
 class Participant_relations(db.Model):
@@ -63,19 +63,21 @@ class Templates(db.Model):
 class Template_relations(db.Model):
     templ_id = db.Column(db.Integer, db.ForeignKey(Templates.templ_id))
     target_id = db.Column(db.Integer, unique=False, primary_key=True)
-    type = db.Column(db.Integer, unique=False) #1 -- parent-child, 2 -- ese, 3 -- example, 4 -- template-meaning, 9 -- template-participant
+    type = db.Column(db.Integer, unique=False) #1 -- parent-child, 2 -- ese???deleted, 3 -- example, 4 -- template-meaning, 9 -- template-participant
 
 class Event_structure(db.Model):
     ese_id = db.Column(db.Integer, nullable=False, primary_key=True)
     ese = db.Column(db.Text, unique=False, nullable=False)
     type = db.Column(db.Integer, unique=False, nullable=False) #1 -- Initial States, 2 -- beginning, 3 -- Process, 4 -- Final stage, 5 -- Result, 6 -- Implications
     rank = db.Column(db.Integer, unique=False, nullable=False)
-    status = db.Column(db.Integer, unique=False, nullable=True) #1 -- assertion, 2 -- presupposition
+    status = db.Column(db.Integer, unique=False, nullable=True, default=1) #1 -- assertion, 2 -- presupposition
+    controllable = db.Column(db.Integer, default=1)  # 1 -- yes, 0 -- no, 3 -- both
 
 class Event_structure_relations(db.Model):
+    esr_id = db.Column(db.Integer, primary_key=True)
     ese_id = db.Column(db.Integer, nullable=False)
-    target_id = db.Column(db.Integer, unique=False, primary_key=True)
-    type = db.Column(db.Integer, unique=False, nullable=False) #1 -- belonging to a template, 2 -- belonging to a meaning
+    target_id = db.Column(db.Integer, unique=False)
+    type = db.Column(db.Integer, unique=False, nullable=False) #1 -- belonging to a template, 2 -- belonging to a meaning, 3 -- child-parent_templ
 
 class Parts_of_speech(db.Model):
     pos_id = db.Column(db.Integer, primary_key=True)
@@ -112,6 +114,7 @@ class Meanings(db.Model):
     m_id = db.Column(db.Integer, primary_key=True)
     lex_id = db.Column(db.Integer, db.ForeignKey(Lexemes.lex_id))
     status = db.Column(db.Integer, nullable=False, default=1) # 0 -- not shown, 1 -- shown
+    meaning = db.Column(db.Text, nullable=True)
 
 class Example_to_meaning(db.Model):
     example_id = db.Column(db.Integer, db.ForeignKey(Examples.example_id), primary_key=True)

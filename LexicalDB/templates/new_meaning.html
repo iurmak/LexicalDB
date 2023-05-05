@@ -10,13 +10,19 @@
                     <div class="form-floating">
                         <select form="meaning" class="form-select" id="based_on" name="based_on" onchange="addFromTemplate(this.value)">
                             <option value="">отсутствует</option>
-                            {% for t in Templates.query.all() %}
+                            {% for t in Templates.query.order_by(Templates.templ.asc()).all() %}
                                 <option value="{{ t.templ_id }}">{{ t.templ }}</option>
                             {% endfor %}
                         </select>
                         <label for="based_on">
                             Родительский шаблон
                         </label>
+                    </div>
+                </div>
+                <div class="col-12 mb-2">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="short_meaning" name="short_meaning" placeholder="meaning" form="meaning">
+                        <label for="short_meaning">Краткая формулировка значения</label>
                     </div>
                 </div>
             </div>
@@ -32,7 +38,7 @@
                 </div>
                 <div class="col-12 text-center mb-2">
                     <button class="btn btn-sm btn-success" type="submit" form="meaning">
-                        Добавить значение
+                        Сохранить
                     </button>
                 </div>
             </div>
@@ -243,6 +249,9 @@
                         </div>
                     </div>
                     <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Мереология</span>
+                        </div>
                         <div class="col-12 align-items-center text-center mb-1">
                             <a class="text-primary h5"
                                href="javascript:;"
@@ -250,10 +259,10 @@
                                data-bs-toggle="dropdown"
                                data-bs-auto-close="outside"
                                aria-expanded="false"
-                               style="text-decoration-line: none; font-variant: small-caps"
+                               style="text-decoration-line: none; font-size: smaller"
                                id="mer_ls_${current_num}"
                             >
-                                <span>Мереология</span>
+                                <span>Добавить</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
                                 {% for l in Labels.query.filter_by(type=1).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
@@ -265,7 +274,7 @@
                                                    id="mer_${current_num}_{{ l.l_id }}"
                                                    name="mer_${current_num}_{{ l.l_id }}"
                                                    full_name="{{ l.l }}"
-                                                   onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
+                                                   onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Добавить')"
                                             >
                                             <label class="form-check-label"
                                                    for="mer_${current_num}_{{ l.l_id }}"
@@ -287,6 +296,9 @@
                         </div>
                     </div>
                     <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Таксономия</span>
+                        </div>
                         <div class="col-12 align-items-center text-center mb-1">
                             <a class="text-primary h5"
                                href="javascript:;"
@@ -294,10 +306,10 @@
                                data-bs-toggle="dropdown"
                                data-bs-auto-close="outside"
                                aria-expanded="false"
-                               style="text-decoration-line: none; font-variant: small-caps"
+                               style="text-decoration-line: none; font-size: smaller"
                                id="tax_ls_${current_num}"
                             >
-                                <span>Таксономия</span>
+                                <span>Добавить</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
                                 {% for l in Labels.query.filter_by(type=2).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
@@ -309,7 +321,7 @@
                                                    id="tax_${current_num}_{{ l.l_id }}"
                                                    name="tax_${current_num}_{{ l.l_id }}"
                                                    full_name="{{ l.l }}"
-                                                   onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                                   onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Добавить')"
                                             >
                                             <label class="form-check-label"
                                                    for="tax_${current_num}_{{ l.l_id }}"
@@ -331,6 +343,9 @@
                         </div>
                     </div>
                     <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Топология</span>
+                        </div>
                         <div class="col-12 align-items-center text-center mb-1">
                             <a class="text-primary h5"
                                href="javascript:;"
@@ -338,10 +353,10 @@
                                data-bs-toggle="dropdown"
                                data-bs-auto-close="outside"
                                aria-expanded="false"
-                               style="text-decoration-line: none; font-variant: small-caps"
+                               style="text-decoration-line: none; font-size: smaller"
                                id="top_ls_${current_num}"
                             >
-                                <span>Топология</span>
+                                <span>Добавить</span>
                             </a>
                             <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
                                 {% for l in Labels.query.filter_by(type=3).order_by(Labels.rank.asc(), Labels.l.asc()).all() %}
@@ -353,7 +368,7 @@
                                                    id="top_${current_num}_{{ l.l_id }}"
                                                    name="top_${current_num}_{{ l.l_id }}"
                                                    full_name="{{ l.l }}"
-                                                   onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
+                                                   onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Добавить')"
                                             >
                                             <label class="form-check-label"
                                                    for="top_${current_num}_{{ l.l_id }}"
@@ -388,6 +403,7 @@
                             <select class="form-select" id="status_${current_num}" name="status_${current_num}">
                                 <option selected value="1">ядерный</option>
                                 <option value="2">периферийный</option>
+                                <option value="3">инкорпорированный</option>
                             </select>
                             <label for="status_${current_num}">Этот участник</label>
                         </div>
@@ -470,6 +486,9 @@
                                     </div>
                                 </div>
                                 <div class="col">
+                                    <div class="col-12 align-items-center text-center">
+                                        <span style="text-decoration-line: none; font-variant: small-caps">Мереология</span>
+                                    </div>
                                     <div class="col-12 align-items-center text-center mb-1">
                                         <a class="text-primary h5"
                                            href="javascript:;"
@@ -477,7 +496,7 @@
                                            data-bs-toggle="dropdown"
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
-                                           style="text-decoration-line: none; font-variant: small-caps"
+                                           style="text-decoration-line: none; font-size: smaller"
                                            id="mer_ls_${current_num}"
                                         >
                                             ${items['mer_names']}
@@ -492,7 +511,7 @@
                                                                id="mer_${current_num}_{{ l.l_id }}"
                                                                name="mer_${current_num}_{{ l.l_id }}"
                                                                full_name="{{ l.l }}"
-                                                               onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Мереология')"
+                                                               onclick="addLabels('mer_ls_${current_num}', 'mer_${current_num}_{{ l.l_id }}', 'Добавить')"
                                                         >
                                                         <label class="form-check-label"
                                                                for="mer_${current_num}_{{ l.l_id }}"
@@ -514,6 +533,9 @@
                                     </div>
                                 </div>
                                 <div class="col">
+                                    <div class="col-12 align-items-center text-center">
+                                        <span style="text-decoration-line: none; font-variant: small-caps">Таксономия</span>
+                                    </div>
                                     <div class="col-12 align-items-center text-center mb-1">
                                         <a class="text-primary h5"
                                            href="javascript:;"
@@ -521,7 +543,7 @@
                                            data-bs-toggle="dropdown"
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
-                                           style="text-decoration-line: none; font-variant: small-caps"
+                                           style="text-decoration-line: none; font-size: smaller"
                                            id="tax_ls_${current_num}"
                                         >
                                             ${items['tax_names']}
@@ -536,7 +558,7 @@
                                                                id="tax_${current_num}_{{ l.l_id }}"
                                                                name="tax_${current_num}_{{ l.l_id }}"
                                                                full_name="{{ l.l }}"
-                                                               onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Таксономия')"
+                                                               onclick="addLabels('tax_ls_${current_num}', 'tax_${current_num}_{{ l.l_id }}', 'Добавить')"
                                                         >
                                                         <label class="form-check-label"
                                                                for="tax_${current_num}_{{ l.l_id }}"
@@ -558,6 +580,9 @@
                                     </div>
                                 </div>
                                 <div class="col">
+                                    <div class="col-12 align-items-center text-center">
+                                        <span style="text-decoration-line: none; font-variant: small-caps">Топология</span>
+                                    </div>
                                     <div class="col-12 align-items-center text-center mb-1">
                                         <a class="text-primary h5"
                                            href="javascript:;"
@@ -565,7 +590,7 @@
                                            data-bs-toggle="dropdown"
                                            data-bs-auto-close="outside"
                                            aria-expanded="false"
-                                           style="text-decoration-line: none; font-variant: small-caps"
+                                           style="text-decoration-line: none; font-size: smaller"
                                            id="top_ls_${current_num}"
                                         >
                                             ${items['top_names']}
@@ -580,7 +605,7 @@
                                                                id="top_${current_num}_{{ l.l_id }}"
                                                                name="top_${current_num}_{{ l.l_id }}"
                                                                full_name="{{ l.l }}"
-                                                               onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Топология')"
+                                                               onclick="addLabels('top_ls_${current_num}', 'top_${current_num}_{{ l.l_id }}', 'Добавить')"
                                                         >
                                                         <label class="form-check-label"
                                                                for="top_${current_num}_{{ l.l_id }}"
@@ -616,6 +641,7 @@
                                         <select class="form-select" id="status_${current_num}" name="status_${current_num}">
                                             <option selected value="1">ядерный</option>
                                             <option value="2">периферийный</option>
+                                            <option value="3">инкорпорированный</option>
                                         </select>
                                         <label for="status_${current_num}">Этот участник</label>
                                     </div>
@@ -672,15 +698,18 @@
             <div class="col-auto">
                 <select class="form-select form-select-sm" id="status_ese_${type}_${current_num}" name="status_ese_${type}_${current_num}">
                     <option value="1">ассерция</option>
-                    <option value="2">пресуппозиция</option>
+                    <option value="2" selected>пресуппозиция</option>
                 </select>
             </div>
             `
             }
             $(`#${id}`).append(
             `
-            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1">
+            <div class="col row mb-1 align-items-center justify-content-start g-2 p-1" id="ese_column_${type}_${current_num}">
                 <div class="col-3 col-xxl-2 g-2 mt-0 row align-items-center justify-content-center">
+                    <div class="col-auto">
+                        <span type="button" href="();" onclick="ese_column_${type}_${current_num}.remove()">❌</span>
+                    </div>
                     <div class="col-auto">
                         <input class="form-control form-control-sm"
                                type="number" required
@@ -702,7 +731,17 @@
                         <label for="is_child_${type}_${current_num}">Родительский шаблон</label>
                     </div>
                 </div>
-                <div class="col-12 col-xl-8">
+                <div class="col-12 col-xxl-2">
+                    <div class="form-floating">
+                        <select class="form-select" id="control_${type}_${current_num}" name="control_${type}_${current_num}">
+                            <option value="1">контролируемое</option>
+                            <option value="2">неконтролируемое</option>
+                            <option value="3">(не)контролируемое</option>
+                        </select>
+                        <label for="control_${type}_${current_num}">Контролируемость</label>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-12 col-xxl-6">
                     <div class="form-floating">
                         <input type="text" class="form-control" id="${type}_${current_num}"
                                name="${type}_${current_num}"
@@ -818,6 +857,9 @@
                                                 </div>
                                             </div>
                                             <div class="col">
+                                                <div class="col-12 align-items-center text-center">
+                                                    <span style="text-decoration-line: none; font-variant: small-caps">Мереология</span>
+                                                </div>
                                                 <div class="col-12 align-items-center text-center mb-1">
                                                     <a class="text-primary h5"
                                                        href="javascript:;"
@@ -825,7 +867,7 @@
                                                        data-bs-toggle="dropdown"
                                                        data-bs-auto-close="outside"
                                                        aria-expanded="false"
-                                                       style="text-decoration-line: none; font-variant: small-caps"
+                                                       style="text-decoration-line: none; font-size: smaller"
                                                        id="mer_ls_${current_num}"
                                                     >
                                                         ${p['mer_names']}
@@ -862,6 +904,9 @@
                                                 </div>
                                             </div>
                                             <div class="col">
+                                                <div class="col-12 align-items-center text-center">
+                                                    <span style="text-decoration-line: none; font-variant: small-caps">Таксономия</span>
+                                                </div>
                                                 <div class="col-12 align-items-center text-center mb-1">
                                                     <a class="text-primary h5"
                                                        href="javascript:;"
@@ -869,7 +914,7 @@
                                                        data-bs-toggle="dropdown"
                                                        data-bs-auto-close="outside"
                                                        aria-expanded="false"
-                                                       style="text-decoration-line: none; font-variant: small-caps"
+                                                       style="text-decoration-line: none; font-size: smaller"
                                                        id="tax_ls_${current_num}"
                                                     >
                                                         ${p['tax_names']}
@@ -906,6 +951,9 @@
                                                 </div>
                                             </div>
                                             <div class="col">
+                                                <div class="col-12 align-items-center text-center">
+                                                    <span style="text-decoration-line: none; font-variant: small-caps">Топология</span>
+                                                </div>
                                                 <div class="col-12 align-items-center text-center mb-1">
                                                     <a class="text-primary h5"
                                                        href="javascript:;"
@@ -913,7 +961,7 @@
                                                        data-bs-toggle="dropdown"
                                                        data-bs-auto-close="outside"
                                                        aria-expanded="false"
-                                                       style="text-decoration-line: none; font-variant: small-caps"
+                                                       style="text-decoration-line: none; font-size: smaller"
                                                        id="top_ls_${current_num}"
                                                     >
                                                         ${p['top_names']}
@@ -964,6 +1012,7 @@
                                                     <select class="form-select" id="status_${current_num}" name="status_${current_num}">
                                                         <option selected value="1">ядерный</option>
                                                         <option value="2">периферийный</option>
+                                                        <option value="3">инкорпорированный</option>
                                                     </select>
                                                     <label for="status_${current_num}">Этот участник</label>
                                                 </div>
