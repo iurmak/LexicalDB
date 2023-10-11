@@ -1,5 +1,5 @@
 from LexicalDB import app
-from flask import render_template, request, url_for, session, redirect, send_file
+from flask import render_template, request, url_for, session, redirect, send_file, make_response, jsonify
 from LexicalDB.supplement import Emails, Amend, Check
 from LexicalDB.models import db, Users
 from itsdangerous import URLSafeSerializer

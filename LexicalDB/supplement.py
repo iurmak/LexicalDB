@@ -171,7 +171,7 @@ class Check():
             return what.split(by)
         return []
 
-    def ese(id, type, tooltips=True):
+    def ese(id, type, buttons=False):
         if type == 'm':
             type = 2
         elif type == 't':
@@ -186,7 +186,17 @@ class Check():
             5: 'Результат',
             6: 'Следствие'
         }
-        current = []
+        if buttons:
+            current = {
+                1: list(),
+                2: list(),
+                3: list(),
+                4: list(),
+                5: list(),
+                6: list()
+            }
+        else:
+            current = []
         for ese in Event_structure_relations.query.filter_by(type=type, target_id=id).join(Event_structure, Event_structure_relations.ese_id==Event_structure.ese_id).order_by(Event_structure.type.asc()).all():
             if Event_structure.query.get(ese.ese_id):
                 if Event_structure.query.get(ese.ese_id).type == 6:
@@ -195,8 +205,30 @@ class Check():
                     ass_pres = ' (А)'
                 elif Event_structure.query.get(ese.ese_id).status == 2:
                     ass_pres = ' (П)'
-                current.append((names.get(Event_structure.query.get(ese.ese_id).type) + ass_pres, Event_structure.query.get(ese.ese_id).ese.replace('"', '&quot;')))
+                if buttons:
+                    current[Event_structure.query.get(ese.ese_id).type].append(
+                        (ass_pres, Event_structure.query.get(ese.ese_id).ese.replace('"', '&quot;')))
+                else:
+                    current.append((names.get(Event_structure.query.get(ese.ese_id).type) + ass_pres, Event_structure.query.get(ese.ese_id).ese.replace('"', '&quot;')))
         if current:
+            if buttons:
+                button_text = ''
+                collapse_texts = []
+                for c in current:
+                    collapse_text = f'<div class="collapse" id="ese_button_{c}_{id}"><div class="card card-body"><h5>{names.get(c)}</h5>'
+                    if current.get(c):
+                        button_text += f'<button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#ese_button_{c}_{id}" aria-expanded="false">{names.get(c)}</button>'
+                        for i in current.get(c):
+                            collapse_text += f'''<li>{i[-1]}<b>{i[0]}</b></li>'''
+                        collapse_text += '</div></div>'
+                        collapse_texts.append(collapse_text)
+                    else:
+                        button_text += f'<button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#ese_button_{c}_{id}" aria-expanded="false" disabled>{names.get(c)}</button>'
+                return Markup(
+                    f"""<div class="text-center"><div class="btn-group-vertical m-2" role="group">{button_text}</div></div>
+                    <p>{'<p>'.join(collapse_texts)}
+                    """
+                )
             return Markup(', '.join([f'''<abbr style="" data-bs-toggle="tooltip" title="{c[1]}">{c[0]}</abbr>''' for c in current]))
         else:
             return ''

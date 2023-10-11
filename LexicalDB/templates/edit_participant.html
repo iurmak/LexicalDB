@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+{% block title %}
+    Редактирование участника № {{ participant_id }}
+{% endblock %}
+{% block content %}
+    <div class="container mb-2">
+        <form name="participant" id="participant" method="post" action="">
+            <div class="row row-cols-1 row-cols-md-2 align-items-baseline justify-content-start g-2">
+                <div class="col row row-cols-1 align-items-center justify-content-center g-2 me-0 me-md-2" id="existent_participant_{{ participant_id }}">
+                    <div class="col">
+                        <div class="form-floating">
+                            <input type="text" class="form-control label_not_in_use" id="existent_label_{{ participant_id }}"
+                                   name="existent_label_{{ participant_id }}"
+                                   placeholder="Введите текст"
+                                   value="{{ Participants.query.get(participant_id).participant }}"
+                                   oninput="checkLabelAvailability(this, this.value)"
+                                   required
+                            >
+                            <label for="existent_label_{{ participant_id }}">Ярлык</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="existent_sr_{{ participant_id }}"
+                                   name="existent_sr_{{ participant_id }}"
+                                   placeholder="Введите текст"
+                                   list="sr_list"
+                                   value="{% if Participants.query.get(participant_id).sr_id %}{{ Semantic_roles.query.get(Participants.query.get(participant_id).sr_id).sr }}{% endif %}"
+                                   oninput="suggestions('sr', existent_sr_{{ participant_id }}.value)"
+
+                            >
+                            <label for="existent_sr_{{ participant_id }}">Семантическая роль</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Мереология</span>
+                        </div>
+                        <div class="col-12 align-items-center text-center mb-1">
+                            <a class="text-primary h5"
+                               href="javascript:;"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               data-bs-auto-close="outside"
+                               aria-expanded="false"
+                               style="text-decoration-line: none; font-size: smaller"
+                            >
+                                {% if Check.labels(participant_id, 'mer', tooltips=False) %}
+                                    <span>{{ Check.labels(participant_id, 'mer', tooltips=False) }}</span>
+                                {% else %}
+                                    <span>Добавить</span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                {% for l in Labels.query.filter_by(type=1).all() %}
+                                    <li>
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   value="{{ l.l_id }}"
+                                                   id="existent_mer_{{ participant_id}}_{{ l.l_id }}"
+                                                   name="existent_mer_{{ participant_id}}_{{ l.l_id }}"
+                                                   {% if Participant_relations.query.filter_by(participant_id=participant_id, target_id=l.l_id, type=5).first() %}checked{% endif %}
+
+                                            >
+                                            <label class="form-check-label"
+                                                   for="existent_mer_{{ participant_id}}_{{ l.l_id }}"
+                                                   style="font-variant: small-caps"
+                                            >
+                                                {{ l.l }}
+                                            </label>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="new_mer_{{ participant_id }}"
+                                       name="new_mer_{{ participant_id }}"
+                                       placeholder="Введите текст"
+                                >
+                                <label for="new_mer_{{ participant_id }}">Введите новые тэги через запятую</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Таксономия</span>
+                        </div>
+                        <div class="col-12 align-items-center text-center mb-1">
+                            <a class="text-primary h5"
+                               href="javascript:;"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               data-bs-auto-close="outside"
+                               aria-expanded="false"
+                               style="text-decoration-line: none; font-size: smaller"
+                            >
+                                {% if Check.labels(participant_id, 'tax', tooltips=False) %}
+                                    <span>{{ Check.labels(participant_id, 'tax', tooltips=False) }}</span>
+                                {% else %}
+                                    <span>Добавить</span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                {% for l in Labels.query.filter_by(type=2).all() %}
+                                    <li>
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   value="{{ l.l_id }}"
+                                                   id="existent_tax_{{ participant_id}}_{{ l.l_id }}"
+                                                   name="existent_tax_{{ participant_id}}_{{ l.l_id }}"
+                                                   {% if Participant_relations.query.filter_by(participant_id=participant_id, target_id=l.l_id, type=1).first() %}checked{% endif %}
+
+                                            >
+                                            <label class="form-check-label"
+                                                   for="existent_tax_{{ participant_id}}_{{ l.l_id }}"
+                                                   style="font-variant: small-caps"
+                                            >
+                                                {{ l.l }}
+                                            </label>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="new_tax_{{ participant_id }}"
+                                       name="new_tax_{{ participant_id }}"
+                                       placeholder="Введите текст"
+                                >
+                                <label for="new_tax_{{ participant_id }}">Введите новые тэги через запятую</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="col-12 align-items-center text-center">
+                            <span style="text-decoration-line: none; font-variant: small-caps">Топология</span>
+                        </div>
+                        <div class="col-12 align-items-center text-center mb-1">
+                            <a class="text-primary h5"
+                               href="javascript:;"
+                               role="button"
+                               data-bs-toggle="dropdown"
+                               data-bs-auto-close="outside"
+                               aria-expanded="false"
+                               style="text-decoration-line: none; font-size: smaller"
+                            >
+                                {% if Check.labels(participant_id, 'top', tooltips=False) %}
+                                    <span>{{ Check.labels(participant_id, 'top', tooltips=False) }}</span>
+                                {% else %}
+                                    <span>Добавить</span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu overflow-auto p-1" style="height: 200px">
+                                {% for l in Labels.query.filter_by(type=3).all() %}
+                                    <li>
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   value="{{ l.l_id }}"
+                                                   id="existent_top_{{ participant_id}}_{{ l.l_id }}"
+                                                   name="existent_top_{{ participant_id}}_{{ l.l_id }}"
+                                                   {% if Participant_relations.query.filter_by(participant_id=participant_id, target_id=l.l_id, type=2).first() %}checked{% endif %}
+
+                                            >
+                                            <label class="form-check-label"
+                                                   for="existent_top_{{ participant_id}}_{{ l.l_id }}"
+                                                   style="font-variant: small-caps"
+                                            >
+                                                {{ l.l }}
+                                            </label>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="new_top_{{ participant_id }}"
+                                       name="new_top_{{ participant_id }}"
+                                       placeholder="Введите текст"
+                                >
+                                <label for="new_top_{{ participant_id }}">Введите новые тэги через запятую</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="existent_other_{{ participant_id }}"
+                                   name="existent_other_{{ participant_id }}"
+                                   placeholder="Введите текст"
+                                   value="{{ Participants.query.get(participant_id).other }}"
+
+                            >
+                            <label for="existent_other_{{ participant_id }}">Другое</label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-floating">
+                            <select class="form-select" id="status_{{ participant_id}}" name="status_{{ participant_id}}" >
+                                <option value="1"{% if Participants.query.get(participant_id).status == 1 %} selected{% endif %}>ядерный</option>
+                                <option value="2"{% if Participants.query.get(participant_id).status == 2 %} selected{% endif %}>периферийный</option>
+                                <option value="3"{% if Participants.query.get(participant_id).status == 3 %} selected{% endif %}>инкорпорированный</option>
+                            </select>
+                            <label for="status_{{ participant_id}}">Этот участник</label>
+                        </div>
+                    </div>
+                    <div class="col mb-2">
+                        <div>
+                            <label for="is_child_{{ participant_id}}" class="form-label">Родительский участник</label>
+                            <select class="form-select" size="4" id="is_child_{{ participant_id}}" name="is_child_{{ participant_id}}" multiple>
+                                <option value="">отсутствует</option>
+                                {% for i in Participants.query.filter_by(type=1).all() %}
+                                    <option value="{{ i.participant_id }}"{% if Participant_relations.query.filter_by(participant_id=i.participant_id, target_id=participant_id, type=3).first() %} selected{% endif %}>
+                                        {{ i.participant }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col row row-cols-1 justify-content-start align-items-center g-2">
+                    <div class="col">
+                        <div class="row align-items-center justify-content-center">
+                            <div class="col-auto">
+                                <span class="h6 m-0">{% if Participants.query.get(participant_id).type == 1 %}Шаблонный участник{% elif Participants.query.get(participant_id).type == 2 %}Нешаблонный участник{% endif %} ID {{ participant_id }}</span>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-sm btn-success" type="submit" form="participant">
+                                    Сохранить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% if Participant_relations.query.filter_by(type=3, participant_id=participant_id).first() %}
+                        <div class="col">
+                            <div class="row row-cols-auto align-items-center justify-content-start border rounded p-1">
+                                <span class="h6 m-0">Родительский для</span>
+                                {% for p in Participant_relations.query.filter_by(type=3, participant_id=participant_id).all() %}
+                                    <div class="col">
+                                        <a href="{{ url_for('edit_participant', participant_id=p.target_id) }}">{{ Participants.query.get(p.target_id).participant }}</a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if Participant_relations.query.filter_by(type=4, participant_id=participant_id).first() %}
+                        <div class="col">
+                            <div class="row row-cols-auto align-items-center justify-content-start border rounded">
+                                <span class="h6 m-0">Используется в значениях</span>
+                                {% for m in Participant_relations.query.filter_by(type=4, participant_id=participant_id).all() %}
+                                    <div class="col">
+                                        <a href="{{ url_for('edit_meaning', m_id=m.target_id) }}">{{ Meanings.query.get(m.target_id).meaning }}</a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if Template_relations.query.filter_by(type=9, target_id=participant_id).first() %}
+                        <div class="col col-auto">
+                            <div class="row row-cols-auto align-items-center justify-content-start border rounded p-1">
+                                <span class="h6 m-0">Используется в шаблонах</span>
+                                {% for t in Template_relations.query.filter_by(type=9, target_id=participant_id).all() %}
+                                    <div class="col">
+                                        <a href="{{ url_for('edit_template', templ_id=t.templ_id) }}">{{ Templates.query.get(t.templ_id).templ }}</a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+    <datalist id="sr_list"></datalist>
+    <script type='text/javascript'>
+        for (var i = 0; i < document.getElementsByTagName('textarea').length; ++i) {
+            autosize(document.getElementsByTagName('textarea')[i]);
+            }
+
+        function suggestions(type, input) {
+            $(`#${type}_list`).empty();
+            if (input.length > 2) {
+                var packet = {
+                    type: type,
+                    input: input
+                };
+                fetch('{{ url_for('editing_autocomplete') }}', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: JSON.stringify(packet),
+                    cache: 'no-cache',
+                    headers: new Headers({
+                        'content-type': 'application/json'
+                    })
+                })
+                .then(function (response) {
+                    if (response.status == 200) {
+                        response.json().then(function (items) {
+                            for (var item in items) {
+                                $(`#${type}_list`).append(
+                                    `<option value="${items[item]}">`
+                                )
+                            }
+                        })
+                    }
+                });
+            }
+        }
+        function checkLabelAvailability(input, value) {
+            if (value.length > 1) {
+                var packet = {
+                    type: 'p_label_availability',
+                    input: value
+                };
+                fetch('{{ url_for('editing_autocomplete') }}', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: JSON.stringify(packet),
+                    cache: 'no-cache',
+                    headers: new Headers({
+                        'content-type': 'application/json'
+                    })
+                })
+                .then(function (response) {
+                    if (response.status == 200) {
+                        response.json().then(function (status) {
+                            if (status) {
+                                $(input).removeClass('is-invalid');
+                                $(input).addClass('is-valid')
+                            } else {
+                                $(input).removeClass('is-valid');
+                                $(input).addClass('is-invalid')
+                            }
+                        })
+                    }
+                });
+            }
+        }
+
+        $('#template').submit(function(event) {
+            if ($('.is-invalid').length) {
+                alert('Удостоверьтесь, что все ярлыки уникальны.')
+                event.preventDefault();
+                $('.is-invalid').focus();
+            }
+        });
+
+        function addLabels(aim, dropdown, type) {
+            if ($(`#${dropdown}`).is(':checked')) {
+                const re_ns = RegExp('\n', 'g');
+                const re_spaces = RegExp(' +$', 'gm');
+                var current_text = $(`#${aim}`).text().replaceAll(re_ns, '').replace(re_spaces, '');
+                if (current_text.match(type)) {
+                    var selected = [$(`#${dropdown}`).attr('full_name')];
+                } else {
+                    var selected = [current_text, $(`#${dropdown}`).attr('full_name')];
+                }
+                $(`#${aim}`).text(selected.join(', '));
+            } else {
+                var label = $(`#${dropdown}`).attr('full_name');
+                const re = RegExp(`(,)*( |^)${label}`.replace('\.', '\\\.'), 'g');
+                const re_spaces = RegExp('[ \n]+$', 'gm');
+                const re_beginning = RegExp('^[ \n]*, ', 'gm');
+                var new_text = $(`#${aim}`).text().replace(re, '').replace(re_spaces, '');
+                if (new_text == '') {
+                    new_text = type
+                }
+                new_text = new_text.replace(re_beginning, '')
+                $(`#${aim}`).text(new_text)
+            }
+        }
+    </script>
+{% endblock %}

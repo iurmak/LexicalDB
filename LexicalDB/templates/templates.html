@@ -46,7 +46,7 @@
                                 <td>
                                     <ul class="list-group">
                                         {% for m in Template_relations.query.filter_by(templ_id=template.templ_id, type=4).all() %}
-                                            <li class="list-group-item">{% if Meanings.query.get(m.target_id).meaning %}<a href="{{ url_for('edit_meaning', m_id=m.target_id) }}">{{ Meanings.query.get(m.target_id).meaning }}</a> (<a href="{{ url_for('edit_lexeme', lex_id=Meanings.query.get(m.target_id).lex_id) }}">{{ Forms.query.filter_by(lex_id=Meanings.query.get(m.target_id).lex_id).first().form }}</a>){% else %}(<a href="{{ url_for('edit_lexeme', lex_id=Meanings.query.get(m.target_id).lex_id) }}">{{ Forms.query.filter_by(lex_id=Meanings.query.get(m.target_id).lex_id).first().form }}</a>){% endif %}</li>
+                                            <li class="list-group-item">{% if Meanings.query.get(m.target_id).meaning %}<a href="{{ url_for('edit_meaning', m_id=m.target_id) }}">{{ Meanings.query.get(m.target_id).meaning }}</a> (<a href="{{ url_for('edit_lexeme', lex_id=Meanings.query.get(m.target_id).lex_id) }}">{{ Forms.query.filter_by(lex_id=Meanings.query.get(m.target_id).lex_id).first().form }}</a>){% elif Meanings.query.get(m.target_id) %}(<a href="{{ url_for('edit_lexeme', lex_id=Meanings.query.get(m.target_id).lex_id) }}">{{ Forms.query.filter_by(lex_id=Meanings.query.get(m.target_id).lex_id).first().form }}</a>){% endif %}</li>
                                         {% endfor %}
                                     </ul>
                                 </td>

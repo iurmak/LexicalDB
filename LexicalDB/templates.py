@@ -670,3 +670,166 @@ def editing_autocomplete():
                 }
             )
         return make_response(response, 200)
+
+
+@app.route('/edit/participant/<int:participant_id>', methods=['POST', 'GET'])
+def edit_participant(participant_id):
+    Check.update()
+    if not session.get('user'):
+        return Check.login()
+    user_id = URLSafeSerializer(app.config['SECRET_KEY'], salt='login').loads(session.get('user'))
+    if Users.query.get(user_id).role_id not in [2, 3]:
+        return Check.status()
+    if request.method == 'GET':
+        return render_template("edit_participant.html",
+                               participant_id=participant_id,
+                               Labels=Labels,
+                               Templates=Templates,
+                               Template_relations=Template_relations,
+                               Semantic_roles=Semantic_roles,
+                               Participants=Participants,
+                               Participant_relations=Participant_relations,
+                               Meanings=Meanings,
+                               Amend=Amend,
+                               Check=Check,
+                               not_=not_
+                               )
+
+    elif request.method == 'POST':
+        no_spaces_at_edges = compile(r'( +$|^ +)')
+        if not Semantic_roles.query.filter_by(sr=no_spaces_at_edges.sub('', request.form.get(f'existent_sr_{participant_id}'))).first():
+            db.session.add(
+                Semantic_roles(
+                    sr=no_spaces_at_edges.sub('', request.form.get(f'existent_sr_{participant_id}'))
+                )
+            )
+            db.session.commit()
+
+        all_new_mereology = [request.form.get(i) for i in request.form if
+                             i.startswith('new_mer_') and no_spaces_at_edges.sub('', request.form.get(i))]
+        for new_mer in all_new_mereology:
+            for mer in new_mer.split(','):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer),
+                                              type=1).first() and no_spaces_at_edges.sub('', mer):
+                    db.session.add(
+                        Labels(
+                            l=no_spaces_at_edges.sub('', mer),
+                            type=1
+                        )
+                    )
+                    db.session.commit()
+
+        all_new_taxonomy = [request.form.get(i) for i in request.form if
+                            i.startswith('new_tax_') and no_spaces_at_edges.sub('', request.form.get(i))]
+        for new_tax in all_new_taxonomy:
+            for tax in new_tax.split(','):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax),
+                                              type=2).first() and no_spaces_at_edges.sub('', tax):
+                    db.session.add(
+                        Labels(
+                            l=no_spaces_at_edges.sub('', tax),
+                            type=2
+                        )
+                    )
+                    db.session.commit()
+
+        all_new_topology = [request.form.get(i) for i in request.form if
+                            i.startswith('new_top_') and no_spaces_at_edges.sub('', request.form.get(i))]
+        for new_top in all_new_topology:
+            for top in new_top.split(','):
+                if not Labels.query.filter_by(l=no_spaces_at_edges.sub('', top),
+                                              type=3).first() and no_spaces_at_edges.sub('', top):
+                    db.session.add(
+                        Labels(
+                            l=no_spaces_at_edges.sub('', top),
+                            type=3
+                        )
+                    )
+                    db.session.commit()
+
+        if no_spaces_at_edges.sub('', request.form.get(f'existent_sr_{participant_id}')):
+            sr_id = Semantic_roles.query.filter_by(
+                sr=no_spaces_at_edges.sub('', request.form.get(f'existent_sr_{participant_id}'))).first().sr_id
+        else:
+            sr_id = None
+        Participants.query.filter_by(participant_id=participant_id).update(dict(
+            participant=no_spaces_at_edges.sub('', request.form.get(f'existent_label_{participant_id}')),
+            sr_id=sr_id,
+            other=no_spaces_at_edges.sub('', request.form.get(f'existent_other_{participant_id}')),
+            status=request.form.get(f'status_{participant_id}'))
+        )
+        participant = Participants.query.filter_by(participant_id=participant_id).first()
+        db.session.commit()
+        Participant_relations.query.filter_by(type=3, target_id=participant.participant_id).delete()
+        if request.form.to_dict(flat=False).get(f'is_child_{participant_id}'):
+            for base in request.form.to_dict(flat=False).get(f'is_child_{participant_id}'):
+                db.session.add(
+                    Participant_relations(
+                        participant_id=base,
+                        target_id=participant.participant_id,
+                        type=3
+                    )
+                )
+            db.session.commit()
+        Participant_relations.query.filter_by(type=1, participant_id=participant.participant_id).delete()
+        for tax in [i for i in request.form if i.startswith(f'existent_tax_{participant_id}_') and request.form.get(i)]:
+            db.session.add(
+                Participant_relations(
+                    participant_id=participant.participant_id,
+                    target_id=int(tax.split('_')[-1]),
+                    type=1
+                )
+            )
+            db.session.commit()
+        for tax in request.form.get(f'new_tax_{participant_id}').split(','):
+            if no_spaces_at_edges.sub('', tax):
+                db.session.add(
+                    Participant_relations(
+                        participant_id=participant.participant_id,
+                        target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', tax), type=2).first().l_id,
+                        type=1
+                    )
+                )
+                db.session.commit()
+        Participant_relations.query.filter_by(type=2, participant_id=participant.participant_id).delete()
+        for top in [i for i in request.form if i.startswith(f'existent_top_{participant_id}_') and request.form.get(i)]:
+            db.session.add(
+                Participant_relations(
+                    participant_id=participant.participant_id,
+                    target_id=int(top.split('_')[-1]),
+                    type=2
+                )
+            )
+            db.session.commit()
+        for top in request.form.get(f'new_top_{participant_id}').split(','):
+            if no_spaces_at_edges.sub('', top):
+                db.session.add(
+                    Participant_relations(
+                        participant_id=participant.participant_id,
+                        target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', top), type=3).first().l_id,
+                        type=2
+                    )
+                )
+                db.session.commit()
+        Participant_relations.query.filter_by(type=5, participant_id=participant.participant_id).delete()
+        for mer in [i for i in request.form if i.startswith(f'existent_mer_{participant_id}_') and request.form.get(i)]:
+            db.session.add(
+                Participant_relations(
+                    participant_id=participant.participant_id,
+                    target_id=int(mer.split('_')[-1]),
+                    type=5
+                )
+            )
+            db.session.commit()
+        for mer in request.form.get(f'new_mer_{participant_id}').split(','):
+            if no_spaces_at_edges.sub('', mer):
+                db.session.add(
+                    Participant_relations(
+                        participant_id=participant.participant_id,
+                        target_id=Labels.query.filter_by(l=no_spaces_at_edges.sub('', mer), type=1).first().l_id,
+                        type=5
+                    )
+                )
+                db.session.commit()
+        db.session.commit()
+        return Amend.flash('Изменения сохранены.', 'success', url_for('edit_participant', participant_id=participant_id))

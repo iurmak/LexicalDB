@@ -7,6 +7,7 @@ from LexicalDB.models import db, Users, Semantic_roles, Participants, Participan
 from itsdangerous import URLSafeSerializer
 from re import sub, compile
 from sqlalchemy import not_
+import sqlite3, os
 
 
 @app.route('/edit/lexeme/<int:lex_id>', methods=['POST', 'GET'])
@@ -793,3 +794,57 @@ def edit_meaning(m_id):
                 db.session.commit()
         db.session.commit()
         return Amend.flash('Изменения сохранены.', 'success', url_for('edit_meaning', m_id=m_id))
+
+@app.route('/search', methods=['POST', 'GET'])
+@app.route('/search/<string:token>', methods=['POST', 'GET'])
+def search(token=None):
+    if request.method == 'GET':
+        return render_template('search.html')
+    elif request.method == 'POST':
+        conn = sqlite3.connect(os.path.join(os.path.dirname(os.path.abspath(__file__)), "lex_typ.db"))
+        """conn.create_function("REGEXP", 2, Amend.regexp)"""
+        cur = conn.cursor()
+        output = {}
+        response = {'template_data': list(),
+                    'type': request.get_json().get('area'),
+                    'meaning_data': dict()}
+        whereabaouts = list()
+        #print(request.get_json())
+        for param, value in request.get_json().get('data'):
+            if param == 'template_name':
+                whereabaouts.append(set([t.templ_id for t in Templates.query.filter(Templates.templ.contains(value)).all()]))
+            elif param == 'meaning':
+                whereabaouts.append(set([t.templ_id for t in Templates.query.join(Template_relations,
+                                                                                  Templates.templ_id==Template_relations
+                                                                                  .templ_id).filter(Template_relations.type==4)
+                                        .join(Meanings, Template_relations.target_id==Meanings.m_id).filter(
+                    Meanings.meaning.contains(value)).all()]))
+        if request.get_json().get('area') == 't':
+            for r in whereabaouts[0].intersection(*whereabaouts[1:]):
+                meanings = [{'m_id': m.m_id, 'meaning': m.meaning} for m in Meanings.query.join(Template_relations,
+                                                                                     Meanings.m_id == Template_relations
+                                                                                     .target_id).filter(
+                    Template_relations.type == 4, Template_relations.templ_id == r).all()]
+                response['template_data'].append((r, Templates.query.get(r).templ, meanings, len(meanings)))
+                response['meaning_data'].update({m.m_id: Check.ese(m.m_id, 'm', buttons=True) for m in Meanings.query.join(
+                    Template_relations,
+                    Meanings.m_id == Template_relations
+                    .target_id).filter(Template_relations.type == 4,
+                                       Template_relations.templ_id == r).all()})
+        """if :
+            res = cur.execute(
+                f'''
+                    SELECT Forms.unit_id FROM Forms
+                    JOIN Units ON Forms.unit_id == Units.unit_id 
+                    WHERE form REGEXP ?
+                    ORDER BY Units.full_entry ASC
+                ''',
+                [(query)]
+            )
+            for f in res.fetchall():
+                if Units.query.get(f[0]).parent_id:
+                    output.update({Units.query.get(f[0]).parent_id: None})
+                else:
+                    output.update({f[0]: None})
+            templates = Templates.query.filter_by()"""
+        return make_response(jsonify(response), 200)

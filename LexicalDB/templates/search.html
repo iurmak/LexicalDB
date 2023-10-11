@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}Поиск по базе данных{% endblock %}
+{% block content %}
+    <div class="container mb-2">
+        <div class="row justify-content-end align-items-center g-2">
+            <div class="col-auto">
+                <button class="btn btn-outline-danger" type="button" onclick="$('#display').empty(); $('#nothing_to_show').removeClass('visually-hidden')">Очистить зону просмотра</button>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#searchBox" aria-controls="searchBox" id="searchBoxButton">Условия поиска</button>
+            </div>
+        </div>
+        <div class="offcanvas offcanvas-start show" data-bs-scroll="true" tabindex="-1" id="searchBox" aria-labelledby="searchBox" style="visibility: visible;" aria-modal="true" role="dialog">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">Составьте поисковый запрос</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <div class="row row-cols-auto align-items-center justify-content-around g-2">
+                    <div class="col">
+                        <select class="form-select" name="area" id="area" required>
+                            <option selected value="">Зона поиска</option>
+                            <option value="t">Шаблоны</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <a class="link-primary h6" onclick="addSearchCondition('t')" style="cursor: pointer">Добавить условие</a>
+                    </div>
+                    <div class="col">
+                        <button class="btn btn-sm btn-success" type="button" id="search_button" onclick="sendSearchRequest()">Искать</button>
+                    </div>
+                </div>
+                <div class="row row-cols-1 justify-content-start align-items-center" id="search_area">
+
+                </div>
+            </div>
+            <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <strong class="me-auto" id="toast_header"></strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body" id="toast_text">
+                </div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="row justify-content-between align-items-top g-2 gy-md-2">
+            <div class="col-12 col-md-3">
+                <p class="h5">
+                Найденное
+                <button class="btn btn-warning visually-hidden" type="button" id="search_button_loading" disabled>
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <span role="status">Поиск</span>
+                </button>
+                </p>
+                <div class="overflow-auto" style="max-height: 90vh">
+                    <ul id="found" class="list-group">
+
+                    </ul>
+                </div>
+            </div>
+            <div class="col-12 col-md-9">
+                <p id="nothing_to_show">Нажмите на найденный элемент, чтобы его отобразить.</p>
+                <div class="row row-cols-1 row-cols-md-2 justify-content-between align-items-top g-2 overflow-auto" id="display" style="max-height: 90vh">
+
+                </div>
+            </div>
+        </div>
+        <!--div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Роль</th>
+                    <th scope="col">Отображаемое имя</th>
+                    <th scope="col">Фамилия</th>
+                    <th scope="col">Имя</th>
+                    <th scope="col">Имейл</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>-->
+
+    </div>
+</div>
+    <script>
+    function triggerToast(header, msg) {
+        const toastLive = document.getElementById('liveToast')
+        if (true) {
+            const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastLive)
+            $('#toast_header').text(header);
+            $('#toast_text').text(msg);
+            toastBootstrap.show()
+        }
+        }
+
+        function addSearchCondition(area) {
+            if (area == 't') {
+                var newSearchBox = `
+<div class="col-auto mb-2 row justify-content-evenly align-items-center g-2">
+    <div class="col-auto">
+        <select class="form-select" name="parameter" required>
+            <option selected value="">Параметр</option>
+            <option value="template_name">Название шаблона</option>
+            <option value="meaning">Значение</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <input required name="query" class="form-control" type="text">
+    </div>
+    <div class="col-auto">
+        <span class="h5" onclick="this.parentNode.parentNode.remove()" style="cursor: pointer">❌</span>
+    </div>
+</div>
+`
+            }
+            $('#search_area').append(newSearchBox)
+        };
+
+        function visualize(iType, iId, mId) {
+            if (iType == 't') {
+                if ($(`#templ_id_${iId}`).length) {
+                return;
+                }
+                var item = JSON.parse(localStorage.getItem('template_data'))[iId];
+                var strings = ''
+                for (let i = 0; i < item.length; i++) {
+                    strings += `
+<li class="list-group-item">
+<a href="#"
+class="link-dark"
+onclick="visualize('ese', ${iId}, ${item[i]['m_id']})"
+>${item[i]['meaning']}</a></li>`;
+                }
+                if (!strings) {
+                    return triggerToast('Результаты поиска неутешительны', 'Значений шаблона не найдено.')
+                } else {
+                    $('#display').append(`
+    <div class="col" id="templ_id_${iId}">
+        <ul class="list-group">
+        ${strings}
+        </ul>
+    </div>`);
+                    $('#display').append(`<div class="col" id="eses_${iId}"></div>`)
+                }
+            } else if (iType == 'ese') {
+                $(`#eses_${iId}`).empty();
+                var item = JSON.parse(localStorage.getItem('meaning_data'))[mId];
+                $(`#eses_${iId}`).append(item).focus()
+            }
+            $('#nothing_to_show').addClass("visually-hidden")
+        };
+
+        function precheck() {
+            $('#found').empty();
+            $('#display').empty();
+            var error_value = ''
+            if (!$("#area").find(":selected").val()) {
+                $("#area").focus();
+                return "Выберите зону поиска!"
+            } else if (!$("#search_area").children().length) {
+                addSearchCondition($("#area").find(":selected").val());
+                return "А что вы ищете?"
+            } else {
+                $("select[name='parameter']").each(function (index) {
+                    if (!$(this).find(":selected").val()) {
+                        this.focus()
+                        return error_value = "Уточните параметр поиска!"
+                    } else if (!$("input[name='query']").eq(index).val()) {
+                        $("input[name='query']").eq(index).focus()
+                        return error_value = "Уточните желаемое значение этого поля!"
+                    }
+                })
+            }
+            return error_value;
+        }
+
+        function sendSearchRequest() {
+            if (precheck()) {
+                return triggerToast('Что-то не так с запросом', precheck())
+            }
+            $('#search_button_loading').removeClass('visually-hidden');
+            const request_data = {
+                area: $("#area").find(":selected").val(),
+                data: []
+            };
+            $("select[name='parameter']").each(function (index) {
+                request_data['data'].push([$(this).find(":selected").val(), $("input[name='query']").eq(index).val()])
+            });
+            let searchBoxCanvas = document.getElementById("searchBox");
+            let openedCanvas = bootstrap.Offcanvas.getInstance(searchBoxCanvas);
+            openedCanvas.hide()
+            fetch('{{ url_for('search') }}', {
+                method: 'POST',
+                credentials: 'include',
+                body: JSON.stringify(request_data),
+                cache: 'no-cache',
+                headers: new Headers({
+                    'content-type': 'application/json'
+                })
+            })
+                .then(function (data) {
+                    if (data.status == 200) {
+                        data.json().then(function (data) {
+                            var storage = {}
+                            $(`#found`).last().attr("tabindex", -1).focus();
+                            for (let l of data['template_data']) {
+                                if (l[3]) {
+                                    var linkClass = 'link-primary'
+                                    var tag = 'a'
+                                } else {
+                                    var linkClass = 'link-secondary'
+                                    var tag = 'span'
+                                }
+                                var result_item = `
+                                <li class="list-group-item">
+                                    <${tag} href="#"
+class="${linkClass}"
+onclick="visualize('t', ${l[0]})"
+>${l[1]} (${l[3]})</${tag}>
+                                </li>`
+                                storage[l[0]] = l[2]
+                                $(`#found`).append(result_item)
+                            };
+                            localStorage.setItem('template_data', JSON.stringify(storage));
+                            localStorage.setItem('meaning_data', JSON.stringify(data['meaning_data']));
+                        });
+                    }
+                    $('#search_button_loading').addClass('visually-hidden');
+                    setTimeout(function () {
+                        if (!document.getElementById('found').hasChildNodes()) {
+                            let searchBoxCanvas = document.getElementById("searchBox");
+                            let openedCanvas = bootstrap.Offcanvas.getInstance(searchBoxCanvas);
+                            openedCanvas.show()
+                            return triggerToast('Результаты поиска неутешительны', 'Ничего не найдено.')
+                        }
+                        },
+                    500);
+                });
+        }
+    </script>
+
+{% endblock %}
+
+<!--var newSearchBox = `
+<div class="col-auto mb-2 row justify-content-evenly align-items-center g-2">
+    <div class="col-auto">
+        <select class="form-select" name="parameter" required>
+            <option selected value="">Параметр</option>
+            <option value="template_name">Название шаблона</option>
+            <option value="parent_template_name">Название родительского шаблона</option>
+            <option value="template_id">ID шаблона</option>
+            <option value="meaning">Значение</option>
+            <option value="meaning_id">ID значения</option>
+            <option value="form">Форма</option>
+            <option value="pos">Часть речи</option>
+            <option value="language">Язык</option>
+            <option value="label">Ярлык</option>
+            <option value="s_role">Семантическая роль</option>
+            <option value="mereology">Мереология</option>
+            <option value="taxonomy">Таксономия</option>
+            <option value="topology">Топология</option>
+            <option value="participant_status">Статус участника</option>
+            <option value="participant_id">ID участника</option>
+            <option value="ese">Элемент структуры события</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <input required name="query" class="form-control" type="text">
+    </div>
+    <div class="col-auto">
+        <span class="h5" onclick="this.parentNode.parentNode.remove()" style="cursor: pointer">❌</span>
+    </div>
+</div>
+`-->

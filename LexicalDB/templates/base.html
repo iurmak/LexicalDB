@@ -4,10 +4,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta charset="utf-8" name="yandex-verification" content="a2acf7b7ab2cb543">
         <link rel="stylesheet" href="/static/css/bootstrap.css">
-        <link rel="icon" href="{{ url_for('static', filename='Pamir_logo.svg') }}" type="image/svg">
-        <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='Pamir_logo_152.png') }}" type="image/png">
-        <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='Pamir_logo_180.png') }}" type="image/png">
-        <link rel="apple-touch-icon" sizes="167x167" href="{{ url_for('static', filename='Pamir_logo_167.png') }}" type="image/png">
+        <link rel="icon" href="{{ url_for('static', filename='mlext.png') }}" type="image/png">
+        <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='mlext.png') }}" type="image/png">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='mlext.png') }}" type="image/png">
+        <link rel="apple-touch-icon" sizes="167x167" href="{{ url_for('static', filename='mlext.png') }}" type="image/png">
         <title>
             {% block title %}{% endblock %}
         </title>
@@ -15,20 +15,23 @@
     </head>
     <body style="font-family: 'Charis SIL'" class="d-flex flex-column min-vh-100">
         <header>
-            <script src="/static/js/jquery-3.2.1.slim.js"></script>
+            <script src="/static/js/jquery-3.7.1.min.js"></script>
             <script src="/static/js//autosize-master/dist/autosize.min.js"></script>
             <nav class="navbar navbar-light navbar-expand-lg text-center flex-column flex-md-row bd-navbar bg-light">
                 <div class="container-fluid">
                     <a class="navbar-brand text-center" href="/" tabindex="-1">
-                        <img src="{{ url_for('static', filename='Shughni logo coloured.png') }}" height="60" class="d-inline-block align-top" alt="">
+                        <img src="{{ url_for('static', filename='mlext.png') }}" height="60" class="d-inline-block align-top" alt="">
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <div class="collapse navbar-collapse" id="navbarNav">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item active">
-                                <a class="nav-link" style="color: black" href="">Тест</a>
+                            <a class="navbar-brand" style="color: black" href="/templates">База данных по колексификации</a>
+                            <li>
+                                <a class="nav-link" href="{{ url_for('search') }}">
+                                    Поиск
+                                </a>
                             </li>
                         </ul>
                         {% if session.get('user') and status(session.get('user')) > 1 %}
